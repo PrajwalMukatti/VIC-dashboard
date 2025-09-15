@@ -8,6 +8,19 @@
         "description": "{{appDescription}}",
         "applicationVersion": {
             "version": "1.0.0"
+        },
+        "dataSources": {
+            "mainService": {
+                "uri": "/sap/opu/odata/sap/ZVIC_SRV/",
+                "type": "OData",
+                "settings": {
+                    "odataVersion": "2.0"
+                }
+            },
+            "mockData": {
+                "uri": "model/mockData.json",
+                "type": "JSON"
+            }
         }
     },
     "sap.ui": {
@@ -46,6 +59,16 @@
                 "settings": {
                     "bundleName": "sap.vic.dashboard.i18n.i18n"
                 }
+            },
+            "": {
+                "dataSource": "mockData",
+                "type": "sap.ui.model.json.JSONModel",
+                "preload": true
+            },
+            "mock": {
+                "dataSource": "mockData",
+                "type": "sap.ui.model.json.JSONModel",
+                "preload": true
             }
         },
         "routing": {

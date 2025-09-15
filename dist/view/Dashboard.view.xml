@@ -1,0 +1,161 @@
+<mvc:View
+    controllerName="sap.vic.dashboard.controller.Dashboard"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:l="sap.ui.layout"
+    xmlns:f="sap.f"
+    xmlns:fb="sap.ui.comp.filterbar"
+    xmlns:viz="sap.viz.ui5.controls"
+    xmlns:viz.data="sap.viz.ui5.data"
+    xmlns:viz.feeds="sap.viz.ui5.controls.common.feeds"
+    xmlns:core="sap.ui.core">
+<f:DynamicPage id="dynamicPageId"
+                   headerExpanded="{state>/headerExpanded}">
+        <f:title>
+            <f:DynamicPageTitle>
+                <f:heading>
+                    <Title text="VIC Dashboard"/>
+                </f:heading>
+            </f:DynamicPageTitle>
+        </f:title>
+        <f:header>
+            <f:DynamicPageHeader>
+                <f:content>
+                    <fb:FilterBar id="filterbar" useToolbar="false" search="onSearch" showGoOnFB="true">
+                        <fb:filterGroupItems>
+                            <fb:FilterGroupItem groupName="primary" name="testType" label="Test Type" visibleInFilterBar="true">
+                                <fb:control>
+                                    <Select id="testTypeSelect" items="{mock>/TestTypes}" change="onTestTypeChange">
+                                        <core:Item key="{mock>text}" text="{mock>text}" />
+                                    </Select>
+                                </fb:control>
+                            </fb:FilterGroupItem>
+                            <fb:FilterGroupItem groupName="primary" name="testPlan" label="Test Plan" visibleInFilterBar="true">
+                                <fb:control>
+                                    <Select id="testPlanSelect" enabled="false">
+                                    </Select>
+                                </fb:control>
+                            </fb:FilterGroupItem>
+                            <fb:FilterGroupItem groupName="primary" name="date" label="Date" visibleInFilterBar="true">
+                                <fb:control>
+                                    <DateRangeSelection id="dateRange"/>
+                                </fb:control>
+                            </fb:FilterGroupItem>
+                        </fb:filterGroupItems>
+                    </fb:FilterBar>
+                </f:content>
+            </f:DynamicPageHeader>
+        </f:header>
+        <f:content>
+            <OverflowToolbar>
+                <ToolbarSpacer/>
+                <SegmentedButton id="viewSwitch" selectedKey="chart" selectionChange="onViewChange">
+                    <items>
+                        <SegmentedButtonItem text="Chart View" key="chart" icon="sap-icon://bar-chart" tooltip="Switch to Chart View"/>
+                        <SegmentedButtonItem text="Table View" key="table" icon="sap-icon://table-view" tooltip="Switch to Table View"/>
+                    </items>
+                </SegmentedButton>
+                <Button icon="sap-icon://excel-attachment" tooltip="Export to Excel" press="onExport" />
+            </OverflowToolbar>
+            <viz:Popover id="idPopOver"></viz:Popover>
+            <l:Grid
+                id="chartsGrid"
+                visible="{= ${view>/view} === 'chart' }"
+                defaultSpan="L6 M6 S12"
+                class="sapUiSmallMarginTop">
+                <viz:VizFrame id="pieChart" uiConfig="{applicationSet:'fiori'}"
+                    height='400px' width="100%" vizType='pie'
+                    vizProperties="{
+                        title: { text: 'Test Status Distribution' },
+                        plotArea: {
+                            dataLabel: {
+                                visible: true
+                            }
+                        }
+                    }">
+                    <viz:dataset>
+                        <viz.data:FlattenedDataset data="{mock>/PieChartData}">
+                            <viz.data:dimensions>
+                                <viz.data:DimensionDefinition name="Status"
+                                    value="{Status}" />
+                            </viz.data:dimensions>
+                            <viz.data:measures>
+                                <viz.data:MeasureDefinition name="Count"
+                                    value="{Count}" />
+                            </viz.data:measures>
+                        </viz.data:FlattenedDataset>
+                    </viz:dataset>
+                    <viz:feeds>
+                        <viz.feeds:FeedItem id='pieChartSizeFeed' uid="size" type="Measure"
+                            values="Count" />
+                        <viz.feeds:FeedItem id='pieChartColorFeed' uid="color" type="Dimension"
+                            values="Status" />
+                    </viz:feeds>
+                </viz:VizFrame>
+                <viz:VizFrame id="columnChart" uiConfig="{applicationSet:'fiori'}"
+                    height='400px' width="100%" vizType='column'
+                    vizProperties="{
+                        title: { text: 'Tests by Product Area' },
+                        plotArea: {
+                            dataLabel: {
+                                visible: true
+                            }
+                        }
+                    }">
+                    <viz:dataset>
+                        <viz.data:FlattenedDataset data="{mock>/ChartData}">
+                            <viz.data:dimensions>
+                                <viz.data:DimensionDefinition name="ProductArea"
+                                    value="{ProductArea}" />
+                            </viz.data:dimensions>
+                            <viz.data:measures>
+                                <viz.data:MeasureDefinition name="Sim100"
+                                    value="{Sim100}" />
+                                <viz.data:MeasureDefinition name="Sim99"
+                                    value="{Sim99}" />
+                                <viz.data:MeasureDefinition name="SimLess"
+                                    value="{SimLess}" />
+                            </viz.data:measures>
+                        </viz.data:FlattenedDataset>
+                    </viz:dataset>
+                    <viz:feeds>
+                        <viz.feeds:FeedItem id='columnChartValueAxisFeed' uid="valueAxis" type="Measure"
+                            values="Sim100,Sim99,SimLess" />
+                        <viz.feeds:FeedItem id='columnChartCategoryAxisFeed' uid="categoryAxis" type="Dimension"
+                            values="ProductArea" />
+                    </viz:feeds>
+                </viz:VizFrame>
+            </l:Grid>
+            <Table
+                id="tableView"
+                visible="{= ${view>/view} === 'table' }"
+                items="{mock>/ChartData}"
+                class="sapUiResponsiveMargin"
+                width="auto">
+                <headerToolbar>
+                    <Toolbar>
+                        <Title text="Data"/>
+                        <ToolbarSpacer />
+                        <Button icon="sap-icon://excel-attachment" tooltip="Export to Excel" press="onExport" />
+                    </Toolbar>
+                </headerToolbar>
+                <columns>
+                    <Column><Text text="Product Area" /></Column>
+                    <Column hAlign="End"><Text text="Sim 100" /></Column>
+                    <Column hAlign="End"><Text text="Sim 99" /></Column>
+                    <Column hAlign="End"><Text text="Sim Less" /></Column>
+                </columns>
+                <items>
+                    <ColumnListItem>
+                        <cells>
+                            <Text text="{mock>ProductArea}" />
+                            <ObjectNumber number="{mock>Sim100}" />
+                            <ObjectNumber number="{mock>Sim99}" />
+                            <ObjectNumber number="{mock>SimLess}" />
+                        </cells>
+                    </ColumnListItem>
+                </items>
+            </Table>
+        </f:content>
+    </f:DynamicPage>
+</mvc:View>
