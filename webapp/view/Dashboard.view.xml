@@ -1,0 +1,77 @@
+<mvc:View
+    controllerName="sap.vic.dashboard.controller.Dashboard"
+    xmlns="sap.m"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns:f="sap.f"
+    xmlns:fb="sap.ui.comp.filterbar"
+    xmlns:viz="sap.viz.ui5.controls"
+    xmlns:viz.data="sap.viz.ui5.data"
+    xmlns:viz.feeds="sap.viz.ui5.controls.common.feeds"
+    xmlns:core="sap.ui.core">
+    <f:DynamicPage id="dynamicPageId"
+                   headerExpanded="{/headerExpanded}">
+        <f:title>
+            <f:DynamicPageTitle>
+                <f:heading>
+                    <Title text="VIC Dashboard"/>
+                </f:heading>
+            </f:DynamicPageTitle>
+        </f:title>
+        <f:header>
+            <f:DynamicPageHeader>
+                <f:content>
+                    <fb:FilterBar id="filterbar" useToolbar="false" search="onSearch" showGoOnFB="true">
+                        <fb:filterGroupItems>
+                            <fb:FilterGroupItem groupName="primary" name="testType" label="Test Type" visibleInFilterBar="true">
+                                <fb:control>
+                                    <Select id="testTypeSelect" items="{mock>/TestTypes}" change="onTestTypeChange">
+                                        <core:Item key="{mock>text}" text="{mock>text}" />
+                                    </Select>
+                                </fb:control>
+                            </fb:FilterGroupItem>
+                            <fb:FilterGroupItem groupName="primary" name="testPlan" label="Test Plan" visibleInFilterBar="true">
+                                <fb:control>
+                                    <Select id="testPlanSelect" enabled="false">
+                                    </Select>
+                                </fb:control>
+                            </fb:FilterGroupItem>
+                            <fb:FilterGroupItem groupName="primary" name="date" label="Date" visibleInFilterBar="true">
+                                <fb:control>
+                                    <DateRangeSelection id="dateRange"/>
+                                </fb:control>
+                            </fb:FilterGroupItem>
+                        </fb:filterGroupItems>
+                    </fb:FilterBar>
+                </f:content>
+            </f:DynamicPageHeader>
+        </f:header>
+        <f:content>
+            <viz:Popover id="idPopOver"></viz:Popover>
+            <viz:VizFrame id="vizFrame" uiConfig="{applicationSet:'fiori'}"
+                height='500px' width="100%" vizType='column'>
+                <viz:dataset>
+                    <viz.data:FlattenedDataset data="{mock>/ChartData}">
+                        <viz.data:dimensions>
+                            <viz.data:DimensionDefinition name="ProductArea"
+                                value="{mock>ProductArea}" />
+                        </viz.data:dimensions>
+                        <viz.data:measures>
+                            <viz.data:MeasureDefinition name="Sim100"
+                                value="{mock>Sim100}" />
+                            <viz.data:MeasureDefinition name="Sim99"
+                                value="{mock>Sim99}" />
+                            <viz.data:MeasureDefinition name="SimLess"
+                                value="{mock>SimLess}" />
+                        </viz.data:measures>
+                    </viz.data:FlattenedDataset>
+                </viz:dataset>
+                <viz:feeds>
+                    <viz.feeds:FeedItem id='valueAxisFeed' uid="valueAxis" type="Measure"
+                        values="Sim100,Sim99,SimLess" />
+                    <viz.feeds:FeedItem id='categoryAxisFeed' uid="categoryAxis" type="Dimension"
+                        values="ProductArea" />
+                </viz:feeds>
+            </viz:VizFrame>
+        </f:content>
+    </f:DynamicPage>
+</mvc:View>
