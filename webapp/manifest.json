@@ -85,12 +85,21 @@
                     "pattern": "",
                     "name": "dashboard",
                     "target": "dashboard"
+                },
+                {
+                    "pattern": "detail/{id}",
+                    "name": "detail",
+                    "target": "detail"
                 }
             ],
             "targets": {
                 "dashboard": {
                     "viewId": "dashboard",
                     "viewName": "Dashboard"
+                },
+                "detail": {
+                    "viewId": "detail",
+                    "viewName": "Detail"
                 }
             }
         }

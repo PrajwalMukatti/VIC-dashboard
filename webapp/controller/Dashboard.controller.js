@@ -12,9 +12,17 @@ sap.ui.define([
 
     return Controller.extend("sap.vic.dashboard.controller.Dashboard", {
         onInit: function () {
-            var oStateModel = new JSONModel({
-                "headerExpanded": true
-            });
+            // Use the Component-level state model so view bindings (state>/...) stay in sync
+            var oStateModel = this.getOwnerComponent().getModel("state") || new JSONModel({});
+            if (oStateModel.getProperty("/headerExpanded") === undefined) {
+                oStateModel.setProperty("/headerExpanded", true);
+            }
+            if (!oStateModel.getProperty("/chartType")) {
+                oStateModel.setProperty("/chartType", "column");
+            }
+            if (oStateModel.getProperty("/chartNavEnabled") === undefined) {
+                oStateModel.setProperty("/chartNavEnabled", false);
+            }
             this.getView().setModel(oStateModel, "state");
 
             var oViewModel = new JSONModel({
@@ -38,19 +46,21 @@ sap.ui.define([
             this.getOwnerComponent().getEventBus().subscribe("vic", "odataAvailable", this._onODataAvailable, this);
 
             this.getView().attachAfterRendering(function() {
-                var oPieChart = this.getView().byId("pieChart");
-                oPieChart.setVizProperties({ title: { text: "Data by Product Area (Pie)" } });
-
-                var oColumnChart = this.getView().byId("columnChart");
-                oColumnChart.setVizProperties({ title: { text: "Data by Product Area (Column)" } });
-
-                // Connect popover to all charts after rendering
-                var oPopOver = this.getView().byId("idPopOver");
-                if (oPopOver) {
-                    oPopOver.connect(oPieChart.getVizUid());
-                    oPopOver.connect(oColumnChart.getVizUid());
+                var oViz = this.getView().byId("mainViz");
+                if (oViz) {
+                    // basic properties + labels
+                    oViz.setVizProperties({
+                        plotArea: { dataLabel: { visible: true } },
+                        title: { visible: false }
+                    });
+                    var oPopOver = this.getView().byId("idPopOver");
+                    if (oPopOver) {
+                        oPopOver.connect(oViz.getVizUid());
+                    }
+                    // ensure feeds/dataset reflect current type
+                    var sType = this.getView().getModel("state").getProperty("/chartType") || "column";
+                    this._applyChartConfig(sType);
                 }
-
             }.bind(this));
         },
 
@@ -278,6 +288,112 @@ sap.ui.define([
             if (bPressed) {
                 this.getOwnerComponent().getEventBus().publish("vic", "odataAvailable");
             }
+        },
+
+        onToggleChartNav: function(oEvent) {
+            var bPressed = oEvent.getParameter("pressed");
+            this.getView().getModel("state").setProperty("/chartNavEnabled", !!bPressed);
+        },
+
+        onChartTypeChange: function(oEvent) {
+            var sKey = (oEvent.getParameter("selectedItem") && oEvent.getParameter("selectedItem").getKey()) || oEvent.getSource().getSelectedKey();
+            this.getView().getModel("state").setProperty("/chartType", sKey);
+            this._applyChartConfig(sKey);
+        },
+
+        _applyChartConfig: function(sChartType) {
+            var oViz = this.byId("mainViz");
+            if (!oViz) { return; }
+
+            // Clear feeds and set dataset based on chart type
+            oViz.removeAllFeeds();
+
+            if (sChartType === "pie" || sChartType === "donut") {
+                // Use aggregated PieChartData
+                var oPieDataset = new FlattenedDataset({
+                    data: { path: "mock>/PieChartData" },
+                    dimensions: [{ name: "label", value: "{Status}" }],
+                    measures: [{ name: "value", value: "{Count}" }]
+                });
+                oViz.setDataset(oPieDataset);
+
+                var feedSize = new FeedItem({ uid: "size", type: "Measure", values: ["value"] });
+                var feedColor = new FeedItem({ uid: "color", type: "Dimension", values: ["label"] });
+                oViz.addFeed(feedSize);
+                oViz.addFeed(feedColor);
+                oViz.setVizType("pie");
+                // Donut look via vizProperties
+                if (sChartType === "donut") {
+                    oViz.setVizProperties({ plotArea: { innerRadius: 60 } });
+                } else {
+                    oViz.setVizProperties({ plotArea: { innerRadius: 0 } });
+                }
+            } else {
+                // Column / Bar / Line / Stacked variants on ChartData
+                var oDataset = new FlattenedDataset({
+                    data: { path: "mock>/ChartData" },
+                    dimensions: [{ name: "ProductArea", value: "{mock>ProductArea}" }],
+                    measures: [
+                        { name: "Sim100", value: "{mock>Sim100}" },
+                        { name: "Sim99", value: "{mock>Sim99}" },
+                        { name: "SimLess", value: "{mock>SimLess}" }
+                    ]
+                });
+                oViz.setDataset(oDataset);
+
+                var feedValue = new FeedItem({ uid: "valueAxis", type: "Measure", values: ["Sim100","Sim99","SimLess"] });
+                var feedCategory = new FeedItem({ uid: "categoryAxis", type: "Dimension", values: ["ProductArea"] });
+                oViz.addFeed(feedValue);
+                oViz.addFeed(feedCategory);
+
+                // handle stacked variants
+                var sType = sChartType;
+                if (sChartType === "stacked_column") sType = "stacked_column";
+                if (sChartType === "stacked_bar") sType = "stacked_bar";
+                oViz.setVizType(sType);
+            }
+        },
+
+        onChartSelect: function(oEvent) {
+            var aData = oEvent.getParameter("data");
+            if (!aData || !aData.length) { return; }
+            var oPt = aData[0];
+            var oCtx = (oPt && (oPt.data || oPt.dataContext || {})) || {};
+            var sKey = oCtx.TestPlan || oCtx.ProductArea || oCtx.label || "";
+            if (!sKey) { return; }
+
+            var bNav = this.getView().getModel("state").getProperty("/chartNavEnabled");
+            if (!bNav) {
+                sap.m.MessageToast.show("Selected: " + sKey);
+                return;
+            }
+            // Internal navigation to table filtered + navigate to detail page
+            this._navigateToTestPlanInternal(sKey);
+        },
+
+        _navigateToTestPlanInternal: function(sKey) {
+            var oMock = this.getView().getModel("mock");
+            var aFull = oMock.getProperty("/ChartDataFull") || oMock.getProperty("/ChartData") || [];
+            var aFiltered = aFull.filter(function(r){
+                return r.TestPlan === sKey || r.ProductArea === sKey || r.TestPlanId === sKey;
+            });
+            if (aFiltered.length) {
+                oMock.setProperty("/ChartData", aFiltered);
+                this._updatePieChartData(aFiltered);
+            }
+            // switch to table and navigate to detail page (first matching item)
+            this.getView().getModel("view").setProperty("/view", "table");
+            var sId = (aFiltered[0] && (aFiltered[0].TestPlanId || aFiltered[0].ProductArea)) || sKey;
+            this.getOwnerComponent().getRouter().navTo("detail", { id: encodeURIComponent(sId) });
+        },
+
+        onRowPress: function(oEvent) {
+            var oItem = oEvent.getParameter("listItem");
+            var oCtx = oItem && oItem.getBindingContext("mock");
+            var oObj = oCtx && oCtx.getObject();
+            if (!oObj) { return; }
+            var sId = oObj.TestPlanId || oObj.ProductArea || "";
+            this.getOwnerComponent().getRouter().navTo("detail", { id: encodeURIComponent(sId) });
         },
 
         createColumnConfig: function() {
