@@ -61,9 +61,9 @@
                 }
             },
             "": {
-                "dataSource": "mockData",
-                "type": "sap.ui.model.json.JSONModel",
-                "preload": true
+                "dataSource": "mainService",
+                "type": "sap.ui.model.odata.v2.ODataModel",
+                "settings": { "defaultBindingMode": "TwoWay" }
             },
             "mock": {
                 "dataSource": "mockData",

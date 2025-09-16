@@ -101,7 +101,7 @@ sap.ui.define([
             oEvent.getSource().close();
         },
 
-        onSearch: function (oEvent) {
+        onPressGo: function (oEvent) {
             var oTestTypeSelect = this.byId("testTypeSelect");
             var oTestPlanSelect = this.byId("testPlanSelect");
             var oDateRange = this.byId("dateRange");
@@ -114,8 +114,9 @@ sap.ui.define([
             if (this._isLiveMode()) {
                 var aFilters = [];
                 if (sTestType) { aFilters.push("SDDocumentCategory eq '" + encodeURIComponent(sTestType) + "'"); }
-                if (oDateFrom) { aFilters.push("WeekOfOrder ge '" + this._fmtDate(oDateFrom) + "'"); }
-                if (oDateTo) { aFilters.push("WeekOfOrder le '" + this._fmtDate(oDateTo) + "'"); }
+                if (sTestPlan) { aFilters.push("TestPlan eq '" + encodeURIComponent(sTestPlan) + "'"); }
+                if (oDateFrom) { aFilters.push("WeekOfOrder ge datetime'" + this._fmtDateTime(oDateFrom) + "'"); }
+                if (oDateTo) { aFilters.push("WeekOfOrder le datetime'" + this._fmtDateTime(oDateTo) + "'"); }
                 var sFilter = aFilters.join(" and ");
 
                 var oOData = this.getOwnerComponent().getModel();
@@ -226,6 +227,10 @@ sap.ui.define([
             var pad = function (n) { return n < 10 ? "0" + n : n; };
             return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
         },
+        
+        _fmtDateTime: function (d) {
+            return this._fmtDate(d) + "T00:00:00";
+        },
 
         onReset: function (oEvent) {
             // Implement reset logic here
@@ -265,6 +270,14 @@ sap.ui.define([
         onViewChange: function(oEvent) {
             var sKey = oEvent.getParameter("key");
             this.getView().getModel("view").setProperty("/view", sKey);
+        },
+        
+        onToggleLive: function(oEvent) {
+            var bPressed = oEvent.getParameter("state") || oEvent.getParameter("pressed");
+            this.getOwnerComponent().getModel("state").setProperty("/liveMode", !!bPressed);
+            if (bPressed) {
+                this.getOwnerComponent().getEventBus().publish("vic", "odataAvailable");
+            }
         },
 
         createColumnConfig: function() {

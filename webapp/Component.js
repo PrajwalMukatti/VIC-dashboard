@@ -26,7 +26,8 @@ sap.ui.define([
             // global app state
             var oState = new JSONModel({
                 headerExpanded: true,
-                liveMode: false
+                liveMode: false,
+                forceLive: false
             });
             this.setModel(oState, "state");
 
@@ -41,9 +42,14 @@ sap.ui.define([
                     } catch (e) { /* ignore in tests */ }
                     this.getEventBus().publish("vic", "odataAvailable");
                 }.bind(this)).catch(function () {
-                    // Stay in mock mode silently
-                    // console.warn("OData not available, staying in mock mode");
-                });
+                    // If developer forces live, enable even if metadata fails
+                    if (oState.getProperty("/forceLive")) {
+                        oState.setProperty("/liveMode", true);
+                        try { MessageToast.show("Force-live enabled (developer)"); } catch (e) { /* ignore */ }
+                        this.getEventBus().publish("vic", "odataAvailable");
+                    }
+                    // otherwise remain in mock mode
+                }.bind(this));
             }
         }
 
