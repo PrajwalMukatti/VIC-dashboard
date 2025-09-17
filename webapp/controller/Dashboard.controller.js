@@ -28,6 +28,9 @@ sap.ui.define([
             if (oStateModel.getProperty("/chartNavEnabled") === undefined) {
                 oStateModel.setProperty("/chartNavEnabled", false);
             }
+            if (oStateModel.getProperty("/headerPinned") === undefined) {
+                oStateModel.setProperty("/headerPinned", false);
+            }
             this.getView().setModel(oStateModel, "state");
 
             var oViewModel = new JSONModel({
@@ -233,6 +236,20 @@ sap.ui.define([
 
         onPressHelp: function () {
             MessageToast.show("Help – open documentation.");
+        },
+
+        // DynamicPage header: expand/collapse toggle
+        onToggleHeaderExpand: function () {
+            var oState = this.getView().getModel("state");
+            var bExpanded = !!oState.getProperty("/headerExpanded");
+            oState.setProperty("/headerExpanded", !bExpanded);
+        },
+
+        // DynamicPage header: pin/unpin (preserve on scroll)
+        onTogglePinHeader: function (oEvent) {
+            var oState = this.getView().getModel("state");
+            var bPressed = !!(oEvent && (oEvent.getParameter("pressed")));
+            oState.setProperty("/headerPinned", bPressed);
         },
 
         // ShellBar head item handler (Help / Settings / Apps)

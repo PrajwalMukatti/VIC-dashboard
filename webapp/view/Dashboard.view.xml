@@ -10,7 +10,8 @@
     xmlns:viz.feeds="sap.viz.ui5.controls.common.feeds"
     xmlns:core="sap.ui.core">
 <f:DynamicPage id="dynamicPageId"
-                   headerExpanded="{state>/headerExpanded}">
+                   headerExpanded="{state>/headerExpanded}"
+                   preserveHeaderStateOnScroll="{state>/headerPinned}">
         
         <f:header>
             <f:DynamicPageHeader>
@@ -36,6 +37,10 @@
                             </HBox>
                         </f:additionalContent>
                     </f:ShellBar>
+                    <HBox class="sapUiTinyMarginTop sapUiTinyMarginBottom" justifyContent="End">
+                        <ToggleButton id="btnPinHeader" text="Pin Header" pressed="{state>/headerPinned}" press="onTogglePinHeader" class="sapUiTinyMarginEnd"/>
+                        <Button id="btnToggleHeader" icon="{= ${state>/headerExpanded} ? 'sap-icon://collapse-group' : 'sap-icon://expand-group' }" type="Transparent" tooltip="{= ${state>/headerExpanded} ? 'Collapse Header' : 'Expand Header' }" press="onToggleHeaderExpand"/>
+                    </HBox>
                     <fb:FilterBar id="filterbar" useToolbar="false" search="onPressGo" showGoOnFB="true" showClearOnFB="true" clear="onFilterBarClear">
                         <fb:filterGroupItems>
                             <fb:FilterGroupItem groupName="primary" name="testType" label="Test Type" visibleInFilterBar="true">
