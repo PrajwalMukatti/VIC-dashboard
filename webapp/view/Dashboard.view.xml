@@ -150,7 +150,7 @@
                 itemPress="onRowPress">
                 <headerToolbar>
                     <Toolbar>
-                        <Title text="Data"/>
+                        <Title text="Test Data ({view>/tableCount})"/>
                         <ToolbarSpacer />
                         <Button id="btnTableSettings" text="Settings" icon="sap-icon://action-settings" press="onOpenColumnSettings" class="sapUiTinyMarginEnd" />
                         <Button id="btnTableExport" text="Export Excel" icon="sap-icon://excel-attachment" press="onExport" />

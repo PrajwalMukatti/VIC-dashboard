@@ -125,6 +125,10 @@ sap.ui.define([
                 oMockDataModel.setProperty("/ChartData", aAgg);
                 // Initialize filtered full dataset for charts (per-plan data)
                 oMockDataModel.setProperty("/FilteredFull", aFull.slice(0));
+                oMockDataModel.setProperty("/FilteredFullBase", aFull.slice(0));
+                // Update table count for header title
+                var oVMc = this.getView().getModel("view");
+                if (oVMc) { oVMc.setProperty("/tableCount", (aFull || []).length); }
                 // Init selections (arrays for multi-select) and compute initial dependent lists
                 oMockDataModel.setProperty("/Selections", {
                     TestType: [], ProductArea: [], TestPlan: [], Similarity: [], DateFrom: null, DateTo: null
@@ -174,6 +178,9 @@ sap.ui.define([
             });
             // Table shows one row per Test Plan
             oMock.setProperty("/FilteredFull", aFiltered);
+            oMock.setProperty("/FilteredFullBase", aFiltered.slice(0));
+            // Update header table count
+            this._updateTableCount();
             // Keep aggregated dataset in sync for charts
             var m = {};
             aFiltered.forEach(function (r) {
@@ -382,6 +389,17 @@ sap.ui.define([
             ];
 
             oMockModel.setProperty("/PieChartData", aPieChartData);
+        },
+
+        // Update table row count used in the header title "Test Data (N)"
+        _updateTableCount: function () {
+            try {
+                var oVM = this.getView().getModel("view");
+                var oMock = this.getView().getModel("mock");
+                if (!oVM || !oMock) { return; }
+                var aRows = oMock.getProperty("/FilteredFull") || [];
+                oVM.setProperty("/tableCount", aRows.length);
+            } catch (e) { /* no-op */ }
         },
 
         _isLiveMode: function () {
@@ -829,28 +847,33 @@ sap.ui.define([
         
         _applyTableSort: function (colKey, dir) {
             var oMock = this.getView().getModel("mock");
-            var aData = (oMock && oMock.getProperty("/ChartData")) || [];
+            var aData = (oMock && oMock.getProperty("/FilteredFull")) || [];
             if (!colKey) return;
-            var isNumeric = !!(aData.length && typeof aData[0][colKey] === "number");
-            aData.sort(function (a, b) {
+            var isNumeric = !!(aData.length && !isNaN(Number(aData[0][colKey])));
+            var sorted = aData.slice().sort(function (a, b) {
                 var av = a[colKey], bv = b[colKey];
                 if (av === undefined || av === null) av = isNumeric ? -Infinity : "";
                 if (bv === undefined || bv === null) bv = isNumeric ? -Infinity : "";
-                if (isNumeric) { return dir === "asc" ? av - bv : bv - av; }
+                if (isNumeric) {
+                    var na = Number(av), nb = Number(bv);
+                    return dir === "asc" ? (na - nb) : (nb - na);
+                }
                 var sA = String(av).toLowerCase(), sB = String(bv).toLowerCase();
                 if (sA < sB) return dir === "asc" ? -1 : 1;
                 if (sA > sB) return dir === "asc" ? 1 : -1;
                 return 0;
             });
-            oMock.setProperty("/ChartData", aData.slice());
+            oMock.setProperty("/FilteredFull", sorted);
         },
         
         _applyTableFilters: function (filters) {
             var oMock = this.getView().getModel("mock");
             if (!oMock) return;
-            var aBase = (oMock.getProperty("/ChartData") || []).slice();
+            var aBase = (oMock.getProperty("/FilteredFullBase") || oMock.getProperty("/FilteredFull") || []).slice();
             if (!filters || !Object.keys(filters).length) {
-                // no additional table filters; leave as-is (main dashboard filters apply elsewhere)
+                // No additional table filters; restore base
+                oMock.setProperty("/FilteredFull", aBase);
+                this._updateTableCount();
                 return;
             }
             var aFiltered = aBase.filter(function (r) {
@@ -863,8 +886,9 @@ sap.ui.define([
                     return String(cell).toLowerCase().indexOf(String(val).toLowerCase()) !== -1;
                 });
             });
-            oMock.setProperty("/ChartData", aFiltered);
-            // keep pie in sync with displayed rows (optional)
+            oMock.setProperty("/FilteredFull", aFiltered);
+            this._updateTableCount();
+            // optional: keep pie in sync with displayed rows
             if (typeof this._updatePieChartData === "function") {
                 this._updatePieChartData(aFiltered);
             }
@@ -1164,6 +1188,10 @@ sap.ui.define([
             });
             var aAgg = Object.keys(m).sort().map(function (k) { return m[k]; });
             oMock.setProperty("/ChartData", aAgg.length ? aAgg : aFull.slice(0));
+            // Reset per-plan dataset and header count
+            oMock.setProperty("/FilteredFull", aFull.slice(0));
+            oMock.setProperty("/FilteredFullBase", aFull.slice(0));
+            this._updateTableCount();
 
             // Update pie based on full dataset
             this._updatePieChartData(aFull);
@@ -1294,6 +1322,9 @@ sap.ui.define([
 
             // Update chart dataset (per-plan)
             oMock.setProperty("/FilteredFull", aFiltered);
+            oMock.setProperty("/FilteredFullBase", aFiltered.slice(0));
+            // Update header table count
+            this._updateTableCount();
 
             // Aggregate filtered rows by ProductArea for ChartData/table/chart display
             var m = {};
