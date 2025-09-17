@@ -11,34 +11,26 @@
     xmlns:core="sap.ui.core">
 <f:DynamicPage id="dynamicPageId"
                    headerExpanded="{state>/headerExpanded}">
-        <f:title>
-            <f:DynamicPageTitle>
-                <f:heading>
-                    <Title text="VIC Dashboard"/>
-                </f:heading>
-            </f:DynamicPageTitle>
-        </f:title>
+        
         <f:header>
             <f:DynamicPageHeader>
                 <f:content>
                     <f:ShellBar
                         id="appShellBar"
                         title="{shell>/ui/shell/title}"
-                        subtitle="{shell>/ui/shell/subTitle}"
+                        secondTitle="{shell>/ui/shell/subTitle}"
                         homeIcon="sap-icon://home"
                         showNotifications="true"
-                        search="onShellSearch"
                         notificationsPressed="onNotificationsPressed"
-                        profilePressed="onProfilePressed"
+                        avatarPressed="onProfilePressed"
                         homeIconPressed="onPressAppLogo"
                         visible="{= !${state>/isInFLP} }">
                         <f:profile>
-                            <Avatar initials="{shell>/ui/shell/profile/initials}" />
+                            <f:Avatar initials="{shell>/ui/shell/profile/initials}" />
                         </f:profile>
-                        <f:actions>
-                            <Button icon="sap-icon://question-mark" tooltip="Help" press="onPressHelp"/>
-                            <Text text="{shell>/ui/shell/version}" wrapping="false" />
-                        </f:actions>
+                        <f:additionalContent>
+                            <SearchField width="280px" placeholder="Search..." search="onShellSearch"/>
+                        </f:additionalContent>
                     </f:ShellBar>
                     <fb:FilterBar id="filterbar" useToolbar="false" search="onPressGo" showGoOnFB="true" showClearOnFB="true" clear="onFilterBarClear">
                         <fb:filterGroupItems>

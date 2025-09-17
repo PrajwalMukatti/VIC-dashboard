@@ -44,10 +44,10 @@ sap.ui.define([
                     ui: {
                         shell: {
                             logo: "/resources/sap-ui-core/images/sap-logo.png",
-                            title: "VIC Dashboard",
-                            subTitle: "Version 2",
+                            title: "VIC dashboard",
+                            subTitle: "",
                             profile: { initials: "VD" },
-                            version: "v2"
+                            version: ""
                         }
                     }
                 }), "shell");
@@ -58,6 +58,13 @@ sap.ui.define([
             } catch (e) {
                 this.getOwnerComponent().getModel("state").setProperty("/isInFLP", false);
             }
+            // Apply saved theme (if any)
+            try {
+                var sSavedTheme = (window.localStorage && localStorage.getItem("uiTheme")) || null;
+                if (sSavedTheme) {
+                    sap.ui.getCore().applyTheme(sSavedTheme);
+                }
+            } catch (e) { /* no-op */ }
 
             // Load mock data as named model
             var oMockDataModel = new JSONModel();
@@ -170,8 +177,33 @@ sap.ui.define([
             MessageToast.show("Notifications – implement list here.");
         },
 
-        onProfilePressed: function () {
-            MessageToast.show("Profile – open user menu here.");
+        onProfilePressed: function (oEvent) {
+            var that = this;
+            if (!this._oThemeSheet) {
+                this._oThemeSheet = new sap.m.ActionSheet({
+                    placement: "Bottom",
+                    buttons: [
+                        new sap.m.Button({ text: "Horizon (Light)",    icon: "sap-icon://palette",     press: function(){ that._setTheme("sap_horizon"); } }),
+                        new sap.m.Button({ text: "Horizon (Dark)",     icon: "sap-icon://palette",     press: function(){ that._setTheme("sap_horizon_dark"); } }),
+                        new sap.m.Button({ text: "High Contrast Black",icon: "sap-icon://contrast",    press: function(){ that._setTheme("sap_horizon_hcb"); } }),
+                        new sap.m.Button({ text: "High Contrast White",icon: "sap-icon://contrast",    press: function(){ that._setTheme("sap_horizon_hcw"); } })
+                    ]
+                });
+                this.getView().addDependent(this._oThemeSheet);
+            }
+            this._oThemeSheet.openBy(oEvent.getSource());
+        },
+        
+        _setTheme: function (sTheme) {
+            try {
+                sap.ui.getCore().applyTheme(sTheme);
+                if (window.localStorage) {
+                    localStorage.setItem("uiTheme", sTheme);
+                }
+                MessageToast.show("Theme applied: " + sTheme);
+            } catch (e) {
+                MessageToast.show("Failed to apply theme");
+            }
         },
 
         onPressAppLogo: function () {
