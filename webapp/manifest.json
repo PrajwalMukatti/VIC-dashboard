@@ -53,6 +53,11 @@
             "compact": true,
             "cozy": true
         },
+        "resources": {
+            "css": [
+                { "uri": "css/style.css" }
+            ]
+        },
         "models": {
             "i18n": {
                 "type": "sap.ui.model.resource.ResourceModel",
@@ -90,6 +95,11 @@
                     "pattern": "detail/{id}",
                     "name": "detail",
                     "target": "detail"
+                },
+                {
+                    "pattern": "goodbye",
+                    "name": "goodbye",
+                    "target": "goodbye"
                 }
             ],
             "targets": {
@@ -100,6 +110,10 @@
                 "detail": {
                     "viewId": "detail",
                     "viewName": "Detail"
+                },
+                "goodbye": {
+                    "viewId": "goodbye",
+                    "viewName": "Goodbye"
                 }
             }
         }

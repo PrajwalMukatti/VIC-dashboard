@@ -10,35 +10,74 @@
     xmlns:viz.feeds="sap.viz.ui5.controls.common.feeds"
     xmlns:core="sap.ui.core">
 <f:DynamicPage id="dynamicPageId"
-                   headerExpanded="{state>/headerExpanded}">
-        <f:title>
-            <f:DynamicPageTitle>
-                <f:heading>
-                    <Title text="VIC Dashboard"/>
-                </f:heading>
-            </f:DynamicPageTitle>
-        </f:title>
+                   headerExpanded="{state>/headerExpanded}"
+                   toggleHeaderOnTitleClick="true">
+        
         <f:header>
             <f:DynamicPageHeader>
                 <f:content>
-                    <fb:FilterBar id="filterbar" useToolbar="false" search="onPressGo" showGoOnFB="true">
+                    <f:ShellBar
+                        id="appShellBar"
+                        class="vicShellBar"
+                        title="{shell>/ui/shell/title}"
+                        secondTitle="{shell>/ui/shell/subTitle}"
+                        homeIcon="sap-icon://home"
+                        showNotifications="false"
+                        showSearch="false"
+                        showProductSwitcher="false"
+                        avatarPressed="onProfilePressed"
+                        homeIconPressed="onPressAppLogo"
+                        visible="{= !${state>/isInFLP} }">
+                        <f:profile>
+                            <f:Avatar id="userAvatar" initials="{shell>/ui/shell/profile/initials}" />
+                        </f:profile>
+                        <f:additionalContent>
+                            <HBox width="100%" justifyContent="Center" class="vicSearchWrap">
+                                <SearchField width="40%" placeholder="Search..." search="onShellSearch"/>
+                            </HBox>
+                        </f:additionalContent>
+                    </f:ShellBar>
+                    <fb:FilterBar id="filterbar" useToolbar="false" search="onPressGo" showGoOnFB="true" showClearOnFB="true" clear="onFilterBarClear">
                         <fb:filterGroupItems>
                             <fb:FilterGroupItem groupName="primary" name="testType" label="Test Type" visibleInFilterBar="true">
                                 <fb:control>
-                                    <Select id="testTypeSelect" items="{mock>/TestTypes}" change="onTestTypeChange">
-                                        <core:Item key="{mock>text}" text="{mock>text}" />
-                                    </Select>
+                                    <MultiComboBox id="testTypeSelect" items="{mock>/TestTypes}" selectedKeys="{mock>/Selections/TestType}" selectionChange="onMultiChange" width="220px">
+                                        <core:Item key="{mock>key}" text="{mock>text}" />
+                                    </MultiComboBox>
                                 </fb:control>
                             </fb:FilterGroupItem>
+                            <fb:FilterGroupItem groupName="primary" name="productArea" label="Product Area" visibleInFilterBar="true">
+                                <fb:control>
+                                    <MultiComboBox id="productAreaSelect" items="{mock>/ProductAreas}" selectedKeys="{mock>/Selections/ProductArea}" selectionChange="onMultiChange" width="220px">
+                                        <core:Item key="{mock>key}" text="{mock>text}" />
+                                    </MultiComboBox>
+                                </fb:control>
+                            </fb:FilterGroupItem>
+
                             <fb:FilterGroupItem groupName="primary" name="testPlan" label="Test Plan" visibleInFilterBar="true">
                                 <fb:control>
-                                    <Select id="testPlanSelect" enabled="false">
-                                    </Select>
+                                    <MultiComboBox id="testPlanSelect" enabled="true" items="{mock>/TestPlans}" selectedKeys="{mock>/Selections/TestPlan}" selectionChange="onMultiChange" width="260px">
+                                        <core:Item key="{mock>key}" text="{mock>text}" />
+                                    </MultiComboBox>
                                 </fb:control>
                             </fb:FilterGroupItem>
+
+                            <fb:FilterGroupItem groupName="primary" name="similarity" label="Similarity" visibleInFilterBar="true">
+                                <fb:control>
+                                    <MultiComboBox id="similaritySelect" selectedKeys="{mock>/Selections/Similarity}" selectionChange="onMultiChange" width="200px">
+                                        <core:Item key="ALL" text="Select All" />
+                                        <core:Item key="lt96" text="Less than 96%" />
+                                        <core:Item key="lt97" text="Less than 97%" />
+                                        <core:Item key="lt98" text="Less than 98%" />
+                                        <core:Item key="lt99" text="Less than 99%" />
+                                        <core:Item key="lt100" text="Less than 100%" />
+                                    </MultiComboBox>
+                                </fb:control>
+                            </fb:FilterGroupItem>
+
                             <fb:FilterGroupItem groupName="primary" name="date" label="Date" visibleInFilterBar="true">
                                 <fb:control>
-                                    <DateRangeSelection id="dateRange"/>
+                                    <DateRangeSelection id="dateRange" change="onFilterBarChange"/>
                                 </fb:control>
                             </fb:FilterGroupItem>
                         </fb:filterGroupItems>
@@ -57,8 +96,8 @@
                         </items>
                     </SegmentedButton>
                     <ToolbarSeparator/>
-                    <Label text="Live"/>
-                    <Switch state="{state>/liveMode}" change="onToggleLive" />
+                    <Label text="Live" visible="false"/>
+                    <Switch id="switchLive" state="{state>/liveMode}" change="onToggleLive" visible="false" />
                     <ToolbarSeparator/>
                     <Select id="chartTypeSelect" selectedKey="{state>/chartType}" change="onChartTypeChange" width="200px">
                         <items>
@@ -71,11 +110,16 @@
                             <core:Item key="stacked_bar" text="Stacked Bar"/>
                         </items>
                     </Select>
-                    <ToggleButton id="navToggle" text="Chart Click → Navigate" pressed="{state>/chartNavEnabled}" press="onToggleChartNav"/>
-                    <Button icon="sap-icon://excel-attachment" tooltip="Export to Excel" press="onExport" />
+                    <Button id="btnExecute" text="Execute" type="Emphasized" enabled="false" tooltip="Requires Authorization from VIC team to activate" press="onExecute" />
                 </OverflowToolbar>
             <viz:Popover id="idPopOver"></viz:Popover>
-            <VBox visible="{= ${view>/view} === 'chart' }" class="sapUiSmallMarginTop">
+            <VBox id="chartContainer" visible="{= ${view>/view} === 'chart' }" class="sapUiSmallMarginTop">
+                <HBox id="chartActions" justifyContent="End" class="sapUiSmallMarginBottom">
+                    <Button id="btnMaximizeChart" text="Maximize" icon="sap-icon://full-screen" press="onMaximizeChart" class="sapUiTinyMarginEnd" />
+                    <Button id="btnZoomIn" text="Zoom In" icon="sap-icon://zoom-in" press="onZoomIn" class="sapUiTinyMarginEnd" />
+                    <Button id="btnZoomOut" text="Zoom Out" icon="sap-icon://zoom-out" press="onZoomOut" />
+                </HBox>
+                <VBox id="chartCanvas">
                 <viz:VizFrame id="mainViz"
                               uiConfig="{applicationSet:'fiori'}"
                               height="420px"
@@ -95,34 +139,187 @@
                         </viz.data:FlattenedDataset>
                     </viz:dataset>
                 </viz:VizFrame>
+                </VBox>
             </VBox>
             <Table
                 id="tableView"
                 visible="{= ${view>/view} === 'table' }"
-                items="{mock>/ChartData}"
+                items="{mock>/FilteredFull}"
                 class="sapUiResponsiveMargin"
                 width="auto"
                 itemPress="onRowPress">
                 <headerToolbar>
                     <Toolbar>
-                        <Title text="Data"/>
+                        <Title text="Test Data ({view>/tableCount})"/>
                         <ToolbarSpacer />
-                        <Button icon="sap-icon://excel-attachment" tooltip="Export to Excel" press="onExport" />
+                        <Button id="btnTableSettings" text="Settings" icon="sap-icon://action-settings" press="onOpenColumnSettings" class="sapUiTinyMarginEnd" />
+                        <Button id="btnTableExport" text="Export Excel" icon="sap-icon://excel-attachment" press="onExport" />
                     </Toolbar>
                 </headerToolbar>
                 <columns>
-                    <Column><Text text="Product Area" /></Column>
-                    <Column hAlign="End"><Text text="Sim 100" /></Column>
-                    <Column hAlign="End"><Text text="Sim 99" /></Column>
-                    <Column hAlign="End"><Text text="Sim Less" /></Column>
+                    <Column visible="{view>/columns/ProductArea/visible}">
+                        <header>
+                            <Toolbar>
+                                <Title text="Product Area"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="ProductArea"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="ProductArea"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/TestPlan/visible}">
+                        <header>
+                            <Toolbar>
+                                <Title text="Test Plan"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestPlan"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestPlan"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/TestType/visible}">
+                        <header>
+                            <Toolbar>
+                                <Title text="Test Type"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestType"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestType"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/Sim100/visible}" hAlign="End">
+                        <header>
+                            <Toolbar>
+                                <Title text="Sim 100"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="Sim100"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="Sim100"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/Sim99/visible}" hAlign="End">
+                        <header>
+                            <Toolbar>
+                                <Title text="Sim 99"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="Sim99"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="Sim99"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/SimLess/visible}" hAlign="End">
+                        <header>
+                            <Toolbar>
+                                <Title text="Sim Less"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="SimLess"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="SimLess"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/SimilarityPercent/visible}" hAlign="End">
+                        <header>
+                            <Toolbar>
+                                <Title text="Similarity %"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="SimilarityPercent"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="SimilarityPercent"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/TestPlanId/visible}">
+                        <header>
+                            <Toolbar>
+                                <Title text="TestPlanId"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestPlanId"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestPlanId"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
                 </columns>
                 <items>
                     <ColumnListItem type="Navigation">
                         <cells>
                             <Text text="{mock>ProductArea}" />
+                            <Text text="{mock>TestPlan}" />
+                            <Text text="{mock>TestType}" />
                             <ObjectNumber number="{mock>Sim100}" />
                             <ObjectNumber number="{mock>Sim99}" />
                             <ObjectNumber number="{mock>SimLess}" />
+                            <ObjectNumber number="{mock>SimilarityPercent}" />
+                            <Text text="{mock>TestPlanId}" />
                         </cells>
                     </ColumnListItem>
                 </items>
