@@ -3,9 +3,9 @@
 /* Make ShellBar title larger and bolder */
 .vicShellBar .sapFShellBarTitle,
 .vicShellBar .sapFShellBar-title {
-  font-size: 1.6rem; /* larger title */
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: 2.4rem !important; /* double size */
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
   letter-spacing: 0.2px;
 }
 
@@ -26,4 +26,13 @@
 /* Optional: tweak ShellBar spacing a bit */
 .vicShellBar .sapFShellBar {
   padding-inline: 0.5rem;
+}
+
+/* Stronger selector to ensure title size takes effect across themes */
+.vicShellBar .sapFShellBar .sapFShellBarTitle,
+.vicShellBar .sapFShellBar .sapMTitle,
+.vicShellBar .sapFShellBar-title {
+  font-size: 2.4rem !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
 }

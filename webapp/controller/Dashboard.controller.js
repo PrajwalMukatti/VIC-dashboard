@@ -195,7 +195,8 @@ sap.ui.define([
                 });
                 this.getView().addDependent(this._oThemeSheet);
             }
-            this._oThemeSheet.openBy(oEvent.getSource());
+            var oAvatar = this.byId("userAvatar");
+            this._oThemeSheet.openBy(oAvatar || oEvent.getSource());
         },
         
         _setTheme: function (sTheme) {
@@ -231,6 +232,42 @@ sap.ui.define([
 
         onPressHelp: function () {
             MessageToast.show("Help – open documentation.");
+        },
+
+        // ShellBar head item handler (Help / Settings / Apps)
+        onShellHeadItemPress: function (oEvent) {
+            var sAction = oEvent.getSource().data("action");
+            switch (sAction) {
+                case "help":
+                    this.onPressHelp();
+                    break;
+                case "settings":
+                    this.onOpenColumnSettings();
+                    break;
+                case "products":
+                    // product switcher placeholder
+                    MessageToast.show("Open Product Switcher");
+                    break;
+                default:
+                    MessageToast.show("Action: " + sAction);
+            }
+        },
+
+        // ShellBar menu item selection (Settings / Help / Sign Out)
+        onShellMenuItemSelected: function (oEvent) {
+            var oItem = oEvent.getParameter("item");
+            var sText = oItem && oItem.getText ? oItem.getText() : "";
+            var sKey = (oItem && oItem.getKey && oItem.getKey()) || "";
+            var s = (sKey || sText || "").toLowerCase();
+            if (s.includes("sign")) {
+                this.onSignOut();
+            } else if (s.includes("setting")) {
+                this.onOpenColumnSettings();
+            } else if (s.includes("help")) {
+                this.onPressHelp();
+            } else {
+                MessageToast.show("Menu: " + (sText || sKey));
+            }
         },
 
         onValueHelpRequested: function (oEvent) {

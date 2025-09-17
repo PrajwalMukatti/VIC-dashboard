@@ -22,12 +22,14 @@
                         secondTitle="{shell>/ui/shell/subTitle}"
                         homeIcon="sap-icon://home"
                         showNotifications="true"
+                        showSearch="false"
+                        showProductSwitcher="false"
                         notificationsPressed="onNotificationsPressed"
                         avatarPressed="onProfilePressed"
                         homeIconPressed="onPressAppLogo"
                         visible="{= !${state>/isInFLP} }">
                         <f:profile>
-                            <f:Avatar initials="{shell>/ui/shell/profile/initials}" />
+                            <f:Avatar id="userAvatar" initials="{shell>/ui/shell/profile/initials}" />
                         </f:profile>
                         <f:additionalContent>
                             <HBox width="100%" justifyContent="Center" class="vicSearchWrap">
