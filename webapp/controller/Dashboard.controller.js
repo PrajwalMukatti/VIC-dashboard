@@ -7,8 +7,9 @@ sap.ui.define([
     "sap/viz/ui5/controls/common/feeds/FeedItem",
     "sap/ui/export/library",
     "sap/ui/export/Spreadsheet",
+    "sap/m/MessageToast",
     "sap/vic/dashboard/model/rowAdapter"
-], function (Controller, JSONModel, Fragment, VizFrame, FlattenedDataset, FeedItem, exportLibrary, Spreadsheet, RowAdapter) {
+], function (Controller, JSONModel, Fragment, VizFrame, FlattenedDataset, FeedItem, exportLibrary, Spreadsheet, MessageToast, RowAdapter) {
     "use strict";
 
     return Controller.extend("sap.vic.dashboard.controller.Dashboard", {
@@ -285,6 +286,11 @@ sap.ui.define([
             }
         },
 
+        // Disabled in UI; kept for future auth wiring
+        onExecute: function () {
+            MessageToast.show("Execute requires VIC team authorization before activation.");
+        },
+
         onToggleChartNav: function(oEvent) {
             var bPressed = oEvent.getParameter("pressed");
             this.getView().getModel("state").setProperty("/chartNavEnabled", !!bPressed);
@@ -349,21 +355,23 @@ sap.ui.define([
             }
         },
 
-        onChartSelect: function(oEvent) {
+        onChartSelect: function (oEvent) {
             var aData = oEvent.getParameter("data");
             if (!aData || !aData.length) { return; }
-            var oPt = aData[0];
-            var oCtx = (oPt && (oPt.data || oPt.dataContext || {})) || {};
-            var sKey = oCtx.TestPlan || oCtx.ProductArea || oCtx.label || "";
-            if (!sKey) { return; }
+            var oHit = aData[0];
+            var oData = (oHit && (oHit.data || oHit.dataContext)) || {};
 
-            var bNav = this.getView().getModel("state").getProperty("/chartNavEnabled");
-            if (!bNav) {
-                sap.m.MessageToast.show("Selected: " + sKey);
+            // Prefer explicit TestPlanId, then TestPlan
+            var sPlanId = oData.TestPlanId || oData.testPlanId || oData.TestPlan || oData.testplan;
+            if (sPlanId) {
+                this._navigateToTestPlan(String(sPlanId));
                 return;
             }
-            // Internal navigation to table filtered + navigate to detail page
-            this._navigateToTestPlanInternal(sKey);
+            // Fallback: navigate with ProductArea/label
+            var sArea = oData.ProductArea || oData.productarea || oData.label;
+            if (sArea) {
+                this._navigateToTestPlan("AREA-" + String(sArea));
+            }
         },
 
         _navigateToTestPlanInternal: function(sKey) {
@@ -380,6 +388,23 @@ sap.ui.define([
             this.getView().getModel("view").setProperty("/view", "table");
             var sId = (aFiltered[0] && (aFiltered[0].TestPlanId || aFiltered[0].ProductArea)) || sKey;
             this.getOwnerComponent().getRouter().navTo("detail", { id: encodeURIComponent(sId) });
+        },
+
+        // Navigate to TestPlan detail - uses router if available; fallback to hash
+        _navigateToTestPlan: function (sTestPlanId) {
+            if (!sTestPlanId) { return; }
+            var oRouter = sap.ui.core.UIComponent.getRouterFor(this);
+            if (oRouter && typeof oRouter.navTo === "function") {
+                try {
+                    // If your app defines a 'TestPlanDetail' route, this will work.
+                    oRouter.navTo("TestPlanDetail", { planId: encodeURIComponent(sTestPlanId) }, false);
+                    return;
+                } catch (e) {
+                    if (console && console.warn) { console.warn("Router nav failed, fallback to hash:", e); }
+                }
+            }
+            // Fallback to hash navigation (dummy page)
+            window.location.hash = "#/TestPlan/" + encodeURIComponent(sTestPlanId);
         },
 
         onRowPress: function(oEvent) {
@@ -434,6 +459,31 @@ sap.ui.define([
             }).finally(function() {
                 oSheet.destroy();
             });
+        },
+
+        // Column settings dialog (opens existing fragment)
+        onOpenColumnSettings: function () {
+            var that = this;
+            if (!this._pColumnSettings) {
+                this._pColumnSettings = Fragment.load({
+                    name: "sap.vic.dashboard.view.ColumnSettings",
+                    controller: this
+                }).then(function (oDialog) {
+                    that.getView().addDependent(oDialog);
+                    return oDialog;
+                });
+            }
+            this._pColumnSettings.then(function (oDialog) { oDialog.open(); });
+        },
+        onColumnVisibilityChange: function () {
+            // bindings update the model; no-op
+        },
+        onColumnSettingsSave: function () {
+            var that = this;
+            if (this._pColumnSettings) {
+                this._pColumnSettings.then(function (oDialog) { oDialog.close(); });
+            }
+            // optional: adjust table columns by model /Columns mapping in future
         },
 
         // New: change handler for any FilterBar field (live filtering + dependent lists)

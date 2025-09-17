@@ -80,8 +80,8 @@
                         </items>
                     </SegmentedButton>
                     <ToolbarSeparator/>
-                    <Label text="Live"/>
-                    <Switch state="{state>/liveMode}" change="onToggleLive" />
+                    <Label text="Live" visible="false"/>
+                    <Switch id="switchLive" state="{state>/liveMode}" change="onToggleLive" visible="false" />
                     <ToolbarSeparator/>
                     <Select id="chartTypeSelect" selectedKey="{state>/chartType}" change="onChartTypeChange" width="200px">
                         <items>
@@ -94,8 +94,7 @@
                             <core:Item key="stacked_bar" text="Stacked Bar"/>
                         </items>
                     </Select>
-                    <ToggleButton id="navToggle" text="Chart Click → Navigate" pressed="{state>/chartNavEnabled}" press="onToggleChartNav"/>
-                    <Button icon="sap-icon://excel-attachment" tooltip="Export to Excel" press="onExport" />
+                    <Button id="btnExecute" text="Execute" type="Emphasized" enabled="false" tooltip="Requires Authorization from VIC team to activate" press="onExecute" />
                 </OverflowToolbar>
             <viz:Popover id="idPopOver"></viz:Popover>
             <VBox visible="{= ${view>/view} === 'chart' }" class="sapUiSmallMarginTop">
@@ -130,7 +129,8 @@
                     <Toolbar>
                         <Title text="Data"/>
                         <ToolbarSpacer />
-                        <Button icon="sap-icon://excel-attachment" tooltip="Export to Excel" press="onExport" />
+                        <Button id="btnTableSettings" text="Settings" icon="sap-icon://action-settings" press="onOpenColumnSettings" class="sapUiTinyMarginEnd" />
+                        <Button id="btnTableExport" text="Export Excel" icon="sap-icon://excel-attachment" press="onExport" />
                     </Toolbar>
                 </headerToolbar>
                 <columns>
