@@ -104,6 +104,7 @@
                     <Button id="btnZoomIn" text="Zoom In" icon="sap-icon://zoom-in" press="onZoomIn" class="sapUiTinyMarginEnd" />
                     <Button id="btnZoomOut" text="Zoom Out" icon="sap-icon://zoom-out" press="onZoomOut" />
                 </HBox>
+                <VBox id="chartCanvas">
                 <viz:VizFrame id="mainViz"
                               uiConfig="{applicationSet:'fiori'}"
                               height="420px"
@@ -123,6 +124,7 @@
                         </viz.data:FlattenedDataset>
                     </viz:dataset>
                 </viz:VizFrame>
+                </VBox>
             </VBox>
             <Table
                 id="tableView"

@@ -10,8 +10,9 @@ sap.ui.define([
     "sap/m/MessageToast",
     "sap/m/ActionSheet",
     "sap/m/Dialog",
+    "sap/m/Image",
     "sap/vic/dashboard/model/rowAdapter"
-], function (Controller, JSONModel, Fragment, VizFrame, FlattenedDataset, FeedItem, exportLibrary, Spreadsheet, MessageToast, ActionSheet, Dialog, RowAdapter) {
+], function (Controller, JSONModel, Fragment, VizFrame, FlattenedDataset, FeedItem, exportLibrary, Spreadsheet, MessageToast, ActionSheet, Dialog, Image, RowAdapter) {
     "use strict";
 
     return Controller.extend("sap.vic.dashboard.controller.Dashboard", {
@@ -624,6 +625,7 @@ sap.ui.define([
                 var svg = dom.querySelector("svg");
                 if (!svg) { sap.m.MessageToast.show("Chart SVG not found"); return; }
 
+                // Serialize SVG and render to high-res PNG for popup displayed on same screen
                 var serializer = new XMLSerializer();
                 var svgString = serializer.serializeToString(svg);
                 if (!/^<svg[^>]+xmlns=/.test(svgString)) {
@@ -633,14 +635,51 @@ sap.ui.define([
                     svgString = svgString.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
                 }
 
-                var w = window.open("", "_blank");
-                if (!w) { sap.m.MessageToast.show("Popup blocked: allow popups to maximize chart."); return; }
-                var html = "<!doctype html><html><head><meta charset='utf-8'><title>Chart - Maximize</title>" +
-                  "<style>html,body{height:100%;margin:0;background:#fff}svg{width:100%;height:100%;}</style></head><body>" +
-                  svgString + "</body></html>";
-                w.document.open();
-                w.document.write(html);
-                w.document.close();
+                var that = this;
+                var blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+                var url = URL.createObjectURL(blob);
+                var imgEl = new Image();
+                imgEl.onload = function () {
+                    try {
+                        var scale = 2; // upscale for clarity
+                        var canvas = document.createElement("canvas");
+                        canvas.width = (imgEl.width || 1200) * scale;
+                        canvas.height = (imgEl.height || 600) * scale;
+                        var ctx = canvas.getContext("2d");
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
+                        URL.revokeObjectURL(url);
+                        var dataUrl = canvas.toDataURL("image/png");
+
+                        if (!that._oMaxDialog) {
+                            that._oMaxDialog = new Dialog({
+                                title: "Chart (Maximized)",
+                                stretch: true,
+                                contentWidth: "100%",
+                                contentHeight: "100%",
+                                verticalScrolling: true,
+                                endButton: new sap.m.Button({
+                                    text: "Close",
+                                    press: function () { that._oMaxDialog.close(); }
+                                })
+                            });
+                            that.getView().addDependent(that._oMaxDialog);
+                        }
+                        that._oMaxDialog.removeAllContent();
+                        that._oMaxDialog.addContent(new Image({
+                            src: dataUrl,
+                            width: "100%",
+                            height: "auto"
+                        }));
+                        that._oMaxDialog.open();
+                    } catch (err) {
+                        URL.revokeObjectURL(url);
+                        sap.m.MessageToast.show("Failed to render chart.");
+                    }
+                };
+                imgEl.onerror = function(){ URL.revokeObjectURL(url); sap.m.MessageToast.show("Failed to load chart SVG."); };
+                imgEl.src = url;
             } catch (e) {
                 if (console && console.error) console.error(e);
                 sap.m.MessageToast.show("Failed to open chart.");
@@ -733,9 +772,10 @@ sap.ui.define([
         },
         _applyChartZoom: function (scale) {
             try {
-                var oChartBox = this.byId("chartContainer");
-                if (!oChartBox) return;
-                var dom = oChartBox.getDomRef();
+                // Only zoom the chart canvas (wrapper around VizFrame), not the action buttons
+                var oCanvasBox = this.byId("chartCanvas");
+                if (!oCanvasBox) return;
+                var dom = oCanvasBox.getDomRef();
                 if (!dom) return;
                 dom.style.transformOrigin = "50% 0";
                 dom.style.transform = "scale(" + scale + ")";
