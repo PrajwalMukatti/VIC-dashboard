@@ -141,18 +141,169 @@
                     </Toolbar>
                 </headerToolbar>
                 <columns>
-                    <Column><Text text="Product Area" /></Column>
-                    <Column hAlign="End"><Text text="Sim 100" /></Column>
-                    <Column hAlign="End"><Text text="Sim 99" /></Column>
-                    <Column hAlign="End"><Text text="Sim Less" /></Column>
+                    <Column visible="{view>/columns/ProductArea/visible}">
+                        <header>
+                            <Toolbar>
+                                <Title text="Product Area"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="ProductArea"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="ProductArea"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/TestType/visible}">
+                        <header>
+                            <Toolbar>
+                                <Title text="Test Type"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestType"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestType"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/TestPlan/visible}">
+                        <header>
+                            <Toolbar>
+                                <Title text="Test Plan"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestPlan"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestPlan"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/Sim100/visible}" hAlign="End">
+                        <header>
+                            <Toolbar>
+                                <Title text="Sim 100"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="Sim100"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="Sim100"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/Sim99/visible}" hAlign="End">
+                        <header>
+                            <Toolbar>
+                                <Title text="Sim 99"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="Sim99"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="Sim99"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/SimLess/visible}" hAlign="End">
+                        <header>
+                            <Toolbar>
+                                <Title text="Sim Less"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="SimLess"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="SimLess"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/SimilarityPercent/visible}" hAlign="End">
+                        <header>
+                            <Toolbar>
+                                <Title text="Similarity %"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="SimilarityPercent"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="SimilarityPercent"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/TestPlanId/visible}">
+                        <header>
+                            <Toolbar>
+                                <Title text="TestPlanId"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestPlanId"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestPlanId"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
                 </columns>
                 <items>
                     <ColumnListItem type="Navigation">
                         <cells>
                             <Text text="{mock>ProductArea}" />
+                            <Text text="{mock>TestType}" />
+                            <Text text="{mock>TestPlan}" />
                             <ObjectNumber number="{mock>Sim100}" />
                             <ObjectNumber number="{mock>Sim99}" />
                             <ObjectNumber number="{mock>SimLess}" />
+                            <ObjectNumber number="{mock>SimilarityPercent}" />
+                            <Text text="{mock>TestPlanId}" />
                         </cells>
                     </ColumnListItem>
                 </items>

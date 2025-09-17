@@ -35,6 +35,8 @@ sap.ui.define([
                 chartZoom: 1
             });
             this.getView().setModel(oViewModel, "view");
+            // Initialize table column metadata, sort/filter state for Table View
+            this._onInitTableSettings();
 
             // Load mock data as named model
             var oMockDataModel = new JSONModel();
@@ -476,29 +478,263 @@ sap.ui.define([
             });
         },
 
-        // Column settings dialog (opens existing fragment)
-        onOpenColumnSettings: function () {
-            var that = this;
-            if (!this._pColumnSettings) {
-                this._pColumnSettings = Fragment.load({
-                    name: "sap.vic.dashboard.view.ColumnSettings",
-                    controller: this
-                }).then(function (oDialog) {
-                    that.getView().addDependent(oDialog);
-                    return oDialog;
+        // ===== Column settings & table sort/filter implementation =====
+        _onInitTableSettings: function () {
+            var oView = this.getView();
+            var vm = oView.getModel("view");
+            if (!vm) {
+                vm = new JSONModel({ view: "table", chartZoom: 1 });
+                oView.setModel(vm, "view");
+            }
+            if (!vm.getProperty("/columns")) {
+                vm.setProperty("/columns", {
+                    ProductArea:        { key: "ProductArea",        label: "Product Area",     visible: true,  type: "string" },
+                    TestType:           { key: "TestType",           label: "Test Type",       visible: true,  type: "string" },
+                    TestPlan:           { key: "TestPlan",           label: "Test Plan",       visible: true,  type: "string" },
+                    Sim100:             { key: "Sim100",             label: "Sim 100",         visible: true,  type: "number" },
+                    Sim99:              { key: "Sim99",              label: "Sim 99",          visible: true,  type: "number" },
+                    SimLess:            { key: "SimLess",            label: "Sim Less",        visible: true,  type: "number" },
+                    SimilarityPercent:  { key: "SimilarityPercent",  label: "Similarity %",    visible: true,  type: "number" },
+                    TestPlanId:         { key: "TestPlanId",         label: "TestPlanId",      visible: true,  type: "string" }
                 });
             }
-            this._pColumnSettings.then(function (oDialog) { oDialog.open(); });
-        },
-        onColumnVisibilityChange: function () {
-            // bindings update the model; no-op
-        },
-        onColumnSettingsSave: function () {
-            var that = this;
-            if (this._pColumnSettings) {
-                this._pColumnSettings.then(function (oDialog) { oDialog.close(); });
+            if (!vm.getProperty("/tableSort")) {
+                vm.setProperty("/tableSort", { key: null, dir: "asc" });
             }
-            // optional: adjust table columns by model /Columns mapping in future
+            if (!vm.getProperty("/tableFilters")) {
+                vm.setProperty("/tableFilters", {});
+            }
+        },
+        
+        onOpenColumnSettings: function () {
+            var that = this;
+            var oView = this.getView();
+            var oViewModel = oView.getModel("view");
+            if (!oViewModel) { this._onInitTableSettings(); oViewModel = oView.getModel("view"); }
+        
+            if (this._oSettingsDialog) {
+                this._oSettingsDialog.open();
+                return;
+            }
+        
+            // Columns tab
+            var oColumnsVBox = new sap.m.VBox({ width: "100%" });
+            var oSearch = new sap.m.SearchField({
+                placeholder: "Search columns",
+                liveChange: function (oEvt) {
+                    var s = (oEvt.getParameter("newValue") || "").toLowerCase();
+                    oColsList.getItems().forEach(function (chk) {
+                        var txt = (chk.data("label") || "").toLowerCase();
+                        chk.setVisible(!s || txt.indexOf(s) !== -1);
+                    });
+                },
+                width: "100%"
+            });
+            var oHideUnselected = new sap.m.Switch({
+                state: false, change: function (oEvt) {
+                    var b = !!oEvt.getParameter("state");
+                    oColsList.getItems().forEach(function (chk) {
+                        if (!chk.getSelected()) chk.setVisible(!b);
+                    });
+                }
+            });
+            var oColsHeader = new sap.m.HBox({
+                items: [ oSearch, new sap.m.Label({ text: "Hide Unselected" }), oHideUnselected ],
+                justifyContent: "SpaceBetween"
+            });
+            var aColsMeta = Object.keys(oViewModel.getProperty("/columns") || {}).map(function (k) {
+                return oViewModel.getProperty("/columns/" + k);
+            });
+            var oColsList = new sap.m.VBox({ width: "100%", items: [] });
+            aColsMeta.forEach(function (col) {
+                var oChk = new sap.m.CheckBox({ text: col.label, selected: !!col.visible });
+                oChk.data("colKey", col.key);
+                oChk.data("label", col.label);
+                oColsList.addItem(oChk);
+            });
+            oColumnsVBox.addItem(oColsHeader);
+            oColumnsVBox.addItem(oColsList);
+        
+            // Sort tab
+            var aColOptions = aColsMeta.map(function (c) { return new sap.ui.core.Item({ key: c.key, text: c.label }); });
+            var oSortVBox = new sap.m.VBox({
+                items: [
+                    new sap.m.Label({ text: "Sort by" }),
+                    new sap.m.Select({ id: this.createId("settingsSortCol"), items: aColOptions, width: "100%" }),
+                    new sap.m.SegmentedButton({
+                        id: this.createId("settingsSortDir"),
+                        selectedKey: "asc",
+                        items: [
+                            new sap.m.SegmentedButtonItem({ key: "asc", text: "Ascending" }),
+                            new sap.m.SegmentedButtonItem({ key: "desc", text: "Descending" })
+                        ]
+                    })
+                ]
+            });
+        
+            // Filter tab
+            var oFilterVBox = new sap.m.VBox({ items: [] });
+            aColsMeta.forEach(function (c) {
+                var oLabel = new sap.m.Label({ text: c.label });
+                var oInput = new sap.m.Input({ width: "100%" });
+                oInput.data("colKey", c.key);
+                oFilterVBox.addItem(oLabel);
+                oFilterVBox.addItem(oInput);
+            });
+        
+            var oIconTabs = new sap.m.IconTabBar({
+                items: [
+                    new sap.m.IconTabFilter({ text: "Columns", key: "columns", content: [ oColumnsVBox ] }),
+                    new sap.m.IconTabFilter({ text: "Sort", key: "sort", content: [ oSortVBox ] }),
+                    new sap.m.IconTabFilter({ text: "Filter", key: "filter", content: [ oFilterVBox ] })
+                ]
+            });
+        
+            this._oSettingsDialog = new sap.m.Dialog({
+                title: "View Settings",
+                contentWidth: "800px",
+                content: [ oIconTabs ],
+                beginButton: new sap.m.Button({
+                    text: "OK",
+                    press: function () {
+                        // Columns
+                        oColsList.getItems().forEach(function (chk) {
+                            var key = chk.data("colKey");
+                            oViewModel.setProperty("/columns/" + key + "/visible", chk.getSelected());
+                        });
+                        // Sort
+                        var sCol = that.byId(that.createId("settingsSortCol")).getSelectedKey();
+                        var sDir = that.byId(that.createId("settingsSortDir")).getSelectedKey();
+                        oViewModel.setProperty("/tableSort/key", sCol);
+                        oViewModel.setProperty("/tableSort/dir", sDir);
+                        if (sCol) { that._applyTableSort(sCol, sDir); }
+                        // Filters
+                        var filters = {};
+                        oFilterVBox.getItems().forEach(function (it) {
+                            if (it && it.isA && it.isA("sap.m.Input")) {
+                                var key = it.data("colKey");
+                                var val = it.getValue && it.getValue();
+                                if (key && val && String(val).trim()) { filters[key] = String(val).trim(); }
+                            }
+                        });
+                        oViewModel.setProperty("/tableFilters", filters);
+                        that._applyTableFilters(filters);
+                        that._oSettingsDialog.close();
+                    }
+                }),
+                endButton: new sap.m.Button({ text: "Cancel", press: function () { that._oSettingsDialog.close(); } }),
+                beforeOpen: function () {
+                    // sync current state
+                    oColsList.getItems().forEach(function (chk) {
+                        var key = chk.data("colKey");
+                        chk.setSelected(!!oViewModel.getProperty("/columns/" + key + "/visible"));
+                    });
+                    var sKey = oViewModel.getProperty("/tableSort/key") || "";
+                    var sDir = oViewModel.getProperty("/tableSort/dir") || "asc";
+                    var oSel = that.byId(that.createId("settingsSortCol"));
+                    var oDir = that.byId(that.createId("settingsSortDir"));
+                    if (oSel) oSel.setSelectedKey(sKey);
+                    if (oDir) oDir.setSelectedKey(sDir);
+                    var filters = oViewModel.getProperty("/tableFilters") || {};
+                    oFilterVBox.getItems().forEach(function (it) {
+                        if (it && it.isA && it.isA("sap.m.Input")) {
+                            var k = it.data("colKey");
+                            it.setValue(filters[k] || "");
+                        }
+                    });
+                }
+            });
+            this.getView().addDependent(this._oSettingsDialog);
+            this._oSettingsDialog.open();
+        },
+        
+        _applyTableSort: function (colKey, dir) {
+            var oMock = this.getView().getModel("mock");
+            var aData = (oMock && oMock.getProperty("/ChartData")) || [];
+            if (!colKey) return;
+            var isNumeric = !!(aData.length && typeof aData[0][colKey] === "number");
+            aData.sort(function (a, b) {
+                var av = a[colKey], bv = b[colKey];
+                if (av === undefined || av === null) av = isNumeric ? -Infinity : "";
+                if (bv === undefined || bv === null) bv = isNumeric ? -Infinity : "";
+                if (isNumeric) { return dir === "asc" ? av - bv : bv - av; }
+                var sA = String(av).toLowerCase(), sB = String(bv).toLowerCase();
+                if (sA < sB) return dir === "asc" ? -1 : 1;
+                if (sA > sB) return dir === "asc" ? 1 : -1;
+                return 0;
+            });
+            oMock.setProperty("/ChartData", aData.slice());
+        },
+        
+        _applyTableFilters: function (filters) {
+            var oMock = this.getView().getModel("mock");
+            if (!oMock) return;
+            var aBase = (oMock.getProperty("/ChartData") || []).slice();
+            if (!filters || !Object.keys(filters).length) {
+                // no additional table filters; leave as-is (main dashboard filters apply elsewhere)
+                return;
+            }
+            var aFiltered = aBase.filter(function (r) {
+                if (!r) return false;
+                return Object.keys(filters).every(function (k) {
+                    var val = filters[k];
+                    if (!val) return true;
+                    var cell = r[k];
+                    if (cell === undefined || cell === null) return false;
+                    return String(cell).toLowerCase().indexOf(String(val).toLowerCase()) !== -1;
+                });
+            });
+            oMock.setProperty("/ChartData", aFiltered);
+            // keep pie in sync with displayed rows (optional)
+            if (typeof this._updatePieChartData === "function") {
+                this._updatePieChartData(aFiltered);
+            }
+        },
+        
+        onHeaderSortPress: function (oEvt) {
+            var sCol = oEvt.getSource().data("col");
+            var vm = this.getView().getModel("view");
+            var prev = (vm && vm.getProperty("/tableSort")) || { key: null, dir: "asc" };
+            var newDir = (prev.key === sCol ? (prev.dir === "asc" ? "desc" : "asc") : "asc");
+            vm.setProperty("/tableSort/key", sCol);
+            vm.setProperty("/tableSort/dir", newDir);
+            this._applyTableSort(sCol, newDir);
+        },
+        
+        onHeaderFilterPress: function (oEvt) {
+            var sCol = oEvt.getSource().data("col");
+            var that = this;
+            var vm = this.getView().getModel("view");
+            var filters = (vm && vm.getProperty("/tableFilters")) || {};
+            var oInput = new sap.m.Input({ placeholder: "Filter value (contains)", width: "260px", value: filters[sCol] || "" });
+            var oPop = new sap.m.Popover({
+                title: "Filter " + sCol,
+                placement: "Bottom",
+                content: [ oInput ],
+                beginButton: new sap.m.Button({
+                    text: "Apply",
+                    press: function () {
+                        var val = oInput.getValue();
+                        if (val && String(val).trim()) filters[sCol] = String(val).trim();
+                        else delete filters[sCol];
+                        vm.setProperty("/tableFilters", filters);
+                        that._applyTableFilters(filters);
+                        oPop.close();
+                    }
+                }),
+                endButton: new sap.m.Button({
+                    text: "Clear",
+                    press: function () {
+                        delete filters[sCol];
+                        vm.setProperty("/tableFilters", filters);
+                        that._applyTableFilters(filters);
+                        oPop.close();
+                    }
+                })
+            });
+            this.getView().addDependent(oPop);
+            oPop.addStyleClass("sapUiPopupWithPadding");
+            oPop.openBy(oEvt.getSource());
         },
 
         // Chart settings action sheet with Maximize/Restore/Copy actions
