@@ -100,7 +100,6 @@
             <VBox id="chartContainer" visible="{= ${view>/view} === 'chart' }" class="sapUiSmallMarginTop">
                 <HBox id="chartActions" justifyContent="End" class="sapUiSmallMarginBottom">
                     <Button id="btnMaximizeChart" text="Maximize" icon="sap-icon://full-screen" press="onMaximizeChart" class="sapUiTinyMarginEnd" />
-                    <Button id="btnCopyChart" text="Copy Chart" icon="sap-icon://copy" press="onCopyChart" class="sapUiTinyMarginEnd" />
                     <Button id="btnZoomIn" text="Zoom In" icon="sap-icon://zoom-in" press="onZoomIn" class="sapUiTinyMarginEnd" />
                     <Button id="btnZoomOut" text="Zoom Out" icon="sap-icon://zoom-out" press="onZoomOut" />
                 </HBox>
