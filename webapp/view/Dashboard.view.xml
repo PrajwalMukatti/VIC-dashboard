@@ -21,24 +21,47 @@
         <f:header>
             <f:DynamicPageHeader>
                 <f:content>
-                    <fb:FilterBar id="filterbar" useToolbar="false" search="onPressGo" showGoOnFB="true">
+                    <fb:FilterBar id="filterbar" useToolbar="false" search="onPressGo" showGoOnFB="true" showClearOnFB="true" clear="onFilterBarClear">
                         <fb:filterGroupItems>
                             <fb:FilterGroupItem groupName="primary" name="testType" label="Test Type" visibleInFilterBar="true">
                                 <fb:control>
-                                    <Select id="testTypeSelect" items="{mock>/TestTypes}" change="onTestTypeChange">
-                                        <core:Item key="{mock>text}" text="{mock>text}" />
-                                    </Select>
+                                    <MultiComboBox id="testTypeSelect" items="{mock>/TestTypes}" selectedKeys="{mock>/Selections/TestType}" selectionChange="onMultiChange" width="220px">
+                                        <core:Item key="{mock>key}" text="{mock>text}" />
+                                    </MultiComboBox>
                                 </fb:control>
                             </fb:FilterGroupItem>
+                            <fb:FilterGroupItem groupName="primary" name="productArea" label="Product Area" visibleInFilterBar="true">
+                                <fb:control>
+                                    <MultiComboBox id="productAreaSelect" items="{mock>/ProductAreas}" selectedKeys="{mock>/Selections/ProductArea}" selectionChange="onMultiChange" width="220px">
+                                        <core:Item key="{mock>key}" text="{mock>text}" />
+                                    </MultiComboBox>
+                                </fb:control>
+                            </fb:FilterGroupItem>
+
                             <fb:FilterGroupItem groupName="primary" name="testPlan" label="Test Plan" visibleInFilterBar="true">
                                 <fb:control>
-                                    <Select id="testPlanSelect" enabled="false">
-                                    </Select>
+                                    <MultiComboBox id="testPlanSelect" enabled="true" items="{mock>/TestPlans}" selectedKeys="{mock>/Selections/TestPlan}" selectionChange="onMultiChange" width="260px">
+                                        <core:Item key="{mock>key}" text="{mock>text}" />
+                                    </MultiComboBox>
                                 </fb:control>
                             </fb:FilterGroupItem>
+
+                            <fb:FilterGroupItem groupName="primary" name="similarity" label="Similarity" visibleInFilterBar="true">
+                                <fb:control>
+                                    <MultiComboBox id="similaritySelect" selectedKeys="{mock>/Selections/Similarity}" selectionChange="onMultiChange" width="200px">
+                                        <core:Item key="ALL" text="Select All" />
+                                        <core:Item key="lt96" text="Less than 96%" />
+                                        <core:Item key="lt97" text="Less than 97%" />
+                                        <core:Item key="lt98" text="Less than 98%" />
+                                        <core:Item key="lt99" text="Less than 99%" />
+                                        <core:Item key="lt100" text="Less than 100%" />
+                                    </MultiComboBox>
+                                </fb:control>
+                            </fb:FilterGroupItem>
+
                             <fb:FilterGroupItem groupName="primary" name="date" label="Date" visibleInFilterBar="true">
                                 <fb:control>
-                                    <DateRangeSelection id="dateRange"/>
+                                    <DateRangeSelection id="dateRange" change="onFilterBarChange"/>
                                 </fb:control>
                             </fb:FilterGroupItem>
                         </fb:filterGroupItems>

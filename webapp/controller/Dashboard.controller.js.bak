@@ -6,9 +6,8 @@ sap.ui.define([
     "sap/viz/ui5/data/FlattenedDataset",
     "sap/viz/ui5/controls/common/feeds/FeedItem",
     "sap/ui/export/library",
-    "sap/ui/export/Spreadsheet",
-    "sap/vic/dashboard/model/rowAdapter"
-], function (Controller, JSONModel, Fragment, VizFrame, FlattenedDataset, FeedItem, exportLibrary, Spreadsheet, RowAdapter) {
+    "sap/ui/export/Spreadsheet"
+], function (Controller, JSONModel, Fragment, VizFrame, FlattenedDataset, FeedItem, exportLibrary, Spreadsheet) {
     "use strict";
 
     return Controller.extend("sap.vic.dashboard.controller.Dashboard", {
@@ -35,61 +34,13 @@ sap.ui.define([
             var oMockDataModel = new JSONModel();
             oMockDataModel.loadData("model/mockData.json");
             oMockDataModel.attachRequestCompleted(function () {
-                // Build ChartDataFull from the richest available source in the mock JSON:
-                // 1) Use ChartDataFull if present
-                // 2) Else synthesize from TestPlans (preferred for v2 file)
-                // 3) Else fall back to legacy ChartData (aggregated)
-                var aFull = oMockDataModel.getProperty("/ChartDataFull");
-                if (!Array.isArray(aFull) || !aFull.length) {
-                    var aPlans = oMockDataModel.getProperty("/TestPlans") || [];
-                    if (Array.isArray(aPlans) && aPlans.length) {
-                        aFull = aPlans.map(function (p) {
-                            return {
-                                TestType: p.testType || "",
-                                TestPlan: p.name || "",
-                                ProductArea: p.productArea || "",
-                                SimilarityPercent: null, // adapter will apply fallback (e.g., 95)
-                                TestPlanId: p.id || ""
-                            };
-                        });
-                    } else {
-                        var aLegacy = oMockDataModel.getProperty("/ChartData") || [];
-                        aFull = aLegacy.slice(0);
-                    }
-                }
-                // Adapt simplified rows to rich shape (idempotent; no-op if already rich)
-                try {
-                    if (RowAdapter && RowAdapter.adaptRows) {
-                        aFull = RowAdapter.adaptRows(aFull, { totalTests: 100 });
-                    }
-                } catch (e) {
-                    if (console && console.warn) { console.warn("RowAdapter error:", e); }
-                }
-                // Set enriched per-plan dataset
-                oMockDataModel.setProperty("/ChartDataFull", aFull.slice(0));
-                // Set initial aggregated ChartData by ProductArea (use existing ChartData if already provided)
-                var aAgg = oMockDataModel.getProperty("/ChartData");
-                if (!Array.isArray(aAgg) || !aAgg.length) {
-                    var m = {};
-                    aFull.forEach(function (r) {
-                        var pa = (r.ProductArea || "").trim();
-                        if (!pa) return;
-                        if (!m[pa]) m[pa] = { ProductArea: pa, Sim100: 0, Sim99: 0, SimLess: 0 };
-                        m[pa].Sim100 += Number(r.Sim100 || 0);
-                        m[pa].Sim99  += Number(r.Sim99 || 0);
-                        m[pa].SimLess+= Number(r.SimLess || 0);
-                    });
-                    aAgg = Object.keys(m).sort().map(function (k) { return m[k]; });
-                }
-                oMockDataModel.setProperty("/ChartData", aAgg);
-                // Init selections (arrays for multi-select) and compute initial dependent lists
-                oMockDataModel.setProperty("/Selections", {
-                    TestType: [], ProductArea: [], TestPlan: [], Similarity: [], DateFrom: null, DateTo: null
-                });
-                this._rebuildSelectorLists();
+                // Keep a copy of full dataset for filtering
+                var aAllChartData = oMockDataModel.getProperty("/ChartData") || [];
+                oMockDataModel.setProperty("/ChartDataFull", aAllChartData.slice(0));
+                // Initialize current chart data to full dataset for initial render
+                oMockDataModel.setProperty("/ChartData", aAllChartData.slice(0));
                 // Initialize pie chart aggregation based on full data
-                this._updatePieChartData(aFull);
-                try { console.info("[Adapter] Initialized rows:", aFull.length); } catch (e) {}
+                this._updatePieChartData(aAllChartData);
             }.bind(this));
             this.getView().setModel(oMockDataModel, "mock");
             this.getOwnerComponent().getEventBus().subscribe("vic", "odataAvailable", this._onODataAvailable, this);
@@ -160,10 +111,64 @@ sap.ui.define([
             oEvent.getSource().close();
         },
 
-        onPressGo: function () {
-            // Sync selections from UI once and apply filters
-            this._getSelectionsFromUI();
-            this._applyAllFilters();
+        onPressGo: function (oEvent) {
+            var oTestTypeSelect = this.byId("testTypeSelect");
+            var oTestPlanSelect = this.byId("testPlanSelect");
+            var oDateRange = this.byId("dateRange");
+
+            var sTestType = oTestTypeSelect.getSelectedKey();
+            var sTestPlan = oTestPlanSelect.getSelectedKey();
+            var oDateFrom = oDateRange.getDateValue();
+            var oDateTo = oDateRange.getSecondDateValue();
+
+            if (this._isLiveMode()) {
+                var aFilters = [];
+                if (sTestType) { aFilters.push("SDDocumentCategory eq '" + encodeURIComponent(sTestType) + "'"); }
+                if (sTestPlan) { aFilters.push("TestPlan eq '" + encodeURIComponent(sTestPlan) + "'"); }
+                if (oDateFrom) { aFilters.push("WeekOfOrder ge datetime'" + this._fmtDateTime(oDateFrom) + "'"); }
+                if (oDateTo) { aFilters.push("WeekOfOrder le datetime'" + this._fmtDateTime(oDateTo) + "'"); }
+                var sFilter = aFilters.join(" and ");
+
+                var oOData = this.getOwnerComponent().getModel();
+                var that = this;
+                oOData.read("/ZI_VIC_UnconfirmedDemandSet", {
+                    urlParameters: sFilter ? { "$filter": sFilter, "$format": "json" } : { "$format": "json" },
+                    success: function(oData) {
+                        var aTransformed = that._transformToChartData(oData.results || []);
+                        var oMock = that.getView().getModel("mock");
+                        oMock.setProperty("/ChartData", aTransformed);
+                        oMock.setProperty("/ChartDataFull", aTransformed.slice(0));
+                        that._updatePieChartData(aTransformed);
+                    },
+                    error: function(err) {
+                        // sap.m.MessageToast.show("Live read failed; retaining last data");
+                    }
+                });
+                return;
+            }
+
+            var oMockModel = this.getView().getModel("mock");
+            var aTestPlans = oMockModel.getProperty("/TestPlans") || [];
+
+            var aFilteredData = aTestPlans.filter(function(oPlan) {
+                var bTestTypeMatch = sTestType ? oPlan.testType === sTestType : true;
+                var bTestPlanMatch = sTestPlan ? oPlan.id === sTestPlan : true;
+                return bTestTypeMatch && bTestPlanMatch;
+            });
+
+            var aChartData = [];
+            var aAllChartData = oMockModel.getProperty("/ChartDataFull") || oMockModel.getProperty("/ChartData") || [];
+            aFilteredData.forEach(function(oPlan) {
+                var oChartDataItem = aAllChartData.find(function(oItem) {
+                    return oItem.ProductArea === oPlan.productArea;
+                });
+                if (oChartDataItem) {
+                    aChartData.push(oChartDataItem);
+                }
+            });
+
+            oMockModel.setProperty("/ChartData", aChartData);
+            this._updatePieChartData(aChartData);
         },
 
         _updatePieChartData: function(aData) {
@@ -434,244 +439,6 @@ sap.ui.define([
             }).finally(function() {
                 oSheet.destroy();
             });
-        },
-
-        // New: change handler for any FilterBar field (live filtering + dependent lists)
-        onFilterBarChange: function () {
-            // For date range or other single-select fields using 'change'
-            this._getSelectionsFromUI();
-            this._rebuildSelectorLists();
-        },
-
-        // Handle MultiComboBox selection changes (Select All + arrays in model)
-        onMultiChange: function (oEvent) {
-            var oSrc = oEvent.getSource();
-            var sId = oSrc && oSrc.getId ? oSrc.getId() : "";
-            var oMock = this.getView().getModel("mock");
-            if (!oMock) return;
-            var sel = oMock.getProperty("/Selections") || {};
-
-            // current selected keys from the MultiComboBox
-            var aKeys = (oSrc.getSelectedKeys && oSrc.getSelectedKeys()) || [];
-
-            // Expand "ALL" to full list (do not keep "ALL" selected)
-            function expandAll(listPath, staticAll) {
-                if (aKeys.indexOf("ALL") !== -1) {
-                    if (listPath) {
-                        var all = (oMock.getProperty(listPath) || [])
-                          .map(function (it) { return it.key; })
-                          .filter(function (k) { return k !== "ALL"; });
-                        aKeys = all;
-                        if (oSrc.setSelectedKeys) { oSrc.setSelectedKeys(aKeys); }
-                    } else if (staticAll && staticAll.length) {
-                        aKeys = staticAll.slice();
-                        if (oSrc.setSelectedKeys) { oSrc.setSelectedKeys(aKeys); }
-                    }
-                }
-            }
-
-            if (sId.indexOf("testTypeSelect") !== -1) {
-                expandAll("/TestTypes");
-                sel.TestType = aKeys;
-            } else if (sId.indexOf("productAreaSelect") !== -1) {
-                expandAll("/ProductAreas");
-                sel.ProductArea = aKeys;
-            } else if (sId.indexOf("testPlanSelect") !== -1) {
-                expandAll("/TestPlans");
-                sel.TestPlan = aKeys;
-            } else if (sId.indexOf("similaritySelect") !== -1) {
-                // static similarities
-                expandAll(null, ["lt96","lt97","lt98","lt99","lt100"]);
-                sel.Similarity = aKeys;
-            }
-
-            oMock.setProperty("/Selections", sel);
-            // Rebuild only dependent lists (plans). Do not auto-apply filters.
-            this._rebuildSelectorLists();
-        },
-
-        // Clear/Reset handler from FilterBar Clear button
-        onFilterBarClear: function () {
-            var oMock = this.getView().getModel("mock");
-            if (!oMock) { return; }
-            var aFull = oMock.getProperty("/ChartDataFull") || [];
-
-            // Reset selections to arrays empty (treated as "All")
-            var sel = {
-                TestType: [], ProductArea: [], TestPlan: [], Similarity: [], DateFrom: null, DateTo: null
-            };
-            oMock.setProperty("/Selections", sel);
-
-            // Clear UI controls
-            var aIds = ["testTypeSelect","productAreaSelect","testPlanSelect","similaritySelect"];
-            for (var i = 0; i < aIds.length; i++) {
-                var c = this.byId(aIds[i]);
-                if (c && c.setSelectedKeys) { c.setSelectedKeys([]); }
-            }
-            var oDR = this.byId("dateRange");
-            if (oDR) {
-                if (oDR.setDateValue) oDR.setDateValue(null);
-                if (oDR.setSecondDateValue) oDR.setSecondDateValue(null);
-                if (oDR.setValue) oDR.setValue("");
-            }
-
-            // Rebuild lists (TestType/ProductArea full; TestPlan intersection from empty → all)
-            this._rebuildSelectorLists();
-
-            // Restore full aggregated data to ChartData
-            var m = {};
-            aFull.forEach(function (r) {
-                var pa = (r.ProductArea || "").trim();
-                if (!pa) return;
-                if (!m[pa]) m[pa] = { ProductArea: pa, Sim100: 0, Sim99: 0, SimLess: 0 };
-                m[pa].Sim100 += Number(r.Sim100 || 0);
-                m[pa].Sim99  += Number(r.Sim99 || 0);
-                m[pa].SimLess+= Number(r.SimLess || 0);
-            });
-            var aAgg = Object.keys(m).sort().map(function (k) { return m[k]; });
-            oMock.setProperty("/ChartData", aAgg.length ? aAgg : aFull.slice(0));
-
-            // Update pie based on full dataset
-            this._updatePieChartData(aFull);
-        },
-
-        // New: read current UI selections into mock>/Selections
-        _getSelectionsFromUI: function () {
-            var oMock = this.getView().getModel("mock");
-            if (!oMock) { return; }
-            var oSel = oMock.getProperty("/Selections") || {};
-
-            var oType = this.byId("testTypeSelect");
-            var oPlan = this.byId("testPlanSelect");
-            var oArea = this.byId("productAreaSelect");
-            var oSim  = this.byId("similaritySelect");
-            var oDR   = this.byId("dateRange");
-
-            oSel.TestType    = oType && oType.getSelectedKeys ? (oType.getSelectedKeys() || []) : (oSel.TestType || []);
-            oSel.TestPlan    = oPlan && oPlan.getSelectedKeys ? (oPlan.getSelectedKeys() || []) : (oSel.TestPlan || []);
-            oSel.ProductArea = oArea && oArea.getSelectedKeys ? (oArea.getSelectedKeys() || []) : (oSel.ProductArea || []);
-            oSel.Similarity  = oSim && oSim.getSelectedKeys ? (oSim.getSelectedKeys() || []) : (oSel.Similarity || []);
-
-            if (oDR && oDR.getDateValue && oDR.getSecondDateValue) {
-                var dFrom = oDR.getDateValue();
-                var dTo   = oDR.getSecondDateValue();
-                oSel.DateFrom = dFrom ? new Date(dFrom).toISOString() : null;
-                oSel.DateTo   = dTo   ? new Date(dTo).toISOString()   : null;
-            }
-
-            oMock.setProperty("/Selections", oSel);
-        },
-
-        // New: recompute lists with requested rules (multi-select + Select All)
-        _rebuildSelectorLists: function () {
-            var oMock = this.getView().getModel("mock");
-            if (!oMock) return;
-            var aFull = oMock.getProperty("/ChartDataFull") || [];
-            var sel = oMock.getProperty("/Selections") || {};
-
-            function n(s){ return s===null||s===undefined?"":String(s).trim(); }
-            function eq(a,b){ return n(a).toLowerCase()===n(b).toLowerCase(); }
-
-            // Normalize arrays (empty array means All)
-            var aTypesSel = Array.isArray(sel.TestType) ? sel.TestType.filter(function(k){return k!=="ALL";}) : [];
-            var aAreasSel = Array.isArray(sel.ProductArea) ? sel.ProductArea.filter(function(k){return k!=="ALL";}) : [];
-
-            // 1) Always-full TestTypes and ProductAreas from all rows
-            var mTypes = {}, mAreas = {};
-            aFull.forEach(function (r) {
-                if (!r) return;
-                var t = n(r.TestType); if (t) mTypes[t] = true;
-                var a = n(r.ProductArea); if (a) mAreas[a] = true;
-            });
-            var aTypes = Object.keys(mTypes).sort().map(function (k){ return { key:k, text:k }; });
-            var aAreas = Object.keys(mAreas).sort().map(function (k){ return { key:k, text:k }; });
-
-            function withAll(arr){ return [{key:"ALL", text:"Select All"}].concat(arr); }
-
-            // 2) TestPlans depends on selected arrays (intersection)
-            var mPlans = {};
-            aFull.forEach(function (r) {
-                if (!r) return;
-                if (aTypesSel.length && aTypesSel.indexOf(n(r.TestType)) === -1) return;
-                if (aAreasSel.length && aAreasSel.indexOf(n(r.ProductArea)) === -1) return;
-                var p = n(r.TestPlan); if (p) mPlans[p] = true;
-            });
-            var aPlans = Object.keys(mPlans).sort().map(function (k){ return { key:k, text:k }; });
-
-            // 3) Write lists to model, prepending "Select All"
-            oMock.setProperty("/TestTypes", withAll(aTypes));
-            oMock.setProperty("/ProductAreas", withAll(aAreas));
-            oMock.setProperty("/TestPlans", withAll(aPlans));
-
-            // 4) Clear only TestPlan if invalid (consider arrays)
-            var aPlanSel = Array.isArray(sel.TestPlan) ? sel.TestPlan.filter(function(k){return k!=="ALL";}) : [];
-            if (aPlanSel.length) {
-                var set = {};
-                aPlans.forEach(function(p){ set[p.key] = true; });
-                var stillValid = aPlanSel.filter(function(k){ return !!set[k]; });
-                if (stillValid.length !== aPlanSel.length) {
-                    sel.TestPlan = stillValid;
-                    oMock.setProperty("/Selections", sel);
-                }
-            }
-        },
-
-        // New: filter ChartDataFull by selections and update ChartData and pie
-        _applyAllFilters: function () {
-            var oMock = this.getView().getModel("mock");
-            if (!oMock) return;
-            var aFull = oMock.getProperty("/ChartDataFull") || [];
-            var s = oMock.getProperty("/Selections") || {};
-
-            function n(s){ return s===null||s===undefined?"":String(s).trim(); }
-            function inArr(arr, v){ return arr.indexOf(n(v)) !== -1; }
-
-            var dFrom = s.DateFrom ? new Date(s.DateFrom) : null;
-            var dTo   = s.DateTo   ? new Date(s.DateTo)   : null;
-
-            var aTypes = Array.isArray(s.TestType) ? s.TestType.filter(function(k){return k!=="ALL";}) : [];
-            var aAreas = Array.isArray(s.ProductArea) ? s.ProductArea.filter(function(k){return k!=="ALL";}) : [];
-            var aPlans = Array.isArray(s.TestPlan) ? s.TestPlan.filter(function(k){return k!=="ALL";}) : [];
-            var aSim   = Array.isArray(s.Similarity) ? s.Similarity.filter(function(k){return k!=="ALL";}) : [];
-
-            var aFiltered = aFull.filter(function (r) {
-                if (aTypes.length && !inArr(aTypes, r.TestType)) return false;
-                if (aAreas.length && !inArr(aAreas, r.ProductArea)) return false;
-                if (aPlans.length && !inArr(aPlans, r.TestPlan)) return false;
-
-                if (aSim.length) {
-                    var rSim = Number(r.SimilarityPercent || 0);
-                    var ok = aSim.some(function (key) {
-                        var m = String(key).match(/^lt(\d+)$/);
-                        if (!m) return false;
-                        var th = Number(m[1]);
-                        return rSim < th;
-                    });
-                    if (!ok) return false;
-                }
-
-                if (dFrom || dTo) {
-                    var rDate = r.Date ? new Date(r.Date) : null;
-                    if (dFrom && rDate && rDate < dFrom) return false;
-                    if (dTo && rDate && rDate > dTo) return false;
-                }
-                return true;
-            });
-
-            // Aggregate filtered rows by ProductArea for ChartData/table/chart display
-            var m = {};
-            aFiltered.forEach(function (r) {
-                var pa = (r.ProductArea || "").trim();
-                if (!pa) return;
-                if (!m[pa]) m[pa] = { ProductArea: pa, Sim100: 0, Sim99: 0, SimLess: 0 };
-                m[pa].Sim100 += Number(r.Sim100 || 0);
-                m[pa].Sim99  += Number(r.Sim99 || 0);
-                m[pa].SimLess+= Number(r.SimLess || 0);
-            });
-            var aAgg = Object.keys(m).sort().map(function (k) { return m[k]; });
-
-            oMock.setProperty("/ChartData", aAgg);
-            this._updatePieChartData(aFiltered);
         }
 
     });
