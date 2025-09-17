@@ -11,8 +11,9 @@ sap.ui.define([
     "sap/m/ActionSheet",
     "sap/m/Dialog",
     "sap/m/Image",
+    "sap/m/TablePersoController",
     "sap/vic/dashboard/model/rowAdapter"
-], function (Controller, JSONModel, Fragment, VizFrame, FlattenedDataset, FeedItem, exportLibrary, Spreadsheet, MessageToast, ActionSheet, Dialog, Image, RowAdapter) {
+], function (Controller, JSONModel, Fragment, VizFrame, FlattenedDataset, FeedItem, exportLibrary, Spreadsheet, MessageToast, ActionSheet, Dialog, Image, TablePersoController, RowAdapter) {
     "use strict";
 
     return Controller.extend("sap.vic.dashboard.controller.Dashboard", {
@@ -488,14 +489,15 @@ sap.ui.define([
             }
             if (!vm.getProperty("/columns")) {
                 vm.setProperty("/columns", {
+                    TestType:           { key: "TestType",           label: "Test Type",        visible: true,  type: "string" },
+                    TestPlan:           { key: "TestPlan",           label: "Test Plan",        visible: true,  type: "string" },
                     ProductArea:        { key: "ProductArea",        label: "Product Area",     visible: true,  type: "string" },
-                    TestType:           { key: "TestType",           label: "Test Type",       visible: true,  type: "string" },
-                    TestPlan:           { key: "TestPlan",           label: "Test Plan",       visible: true,  type: "string" },
-                    Sim100:             { key: "Sim100",             label: "Sim 100",         visible: true,  type: "number" },
-                    Sim99:              { key: "Sim99",              label: "Sim 99",          visible: true,  type: "number" },
-                    SimLess:            { key: "SimLess",            label: "Sim Less",        visible: true,  type: "number" },
-                    SimilarityPercent:  { key: "SimilarityPercent",  label: "Similarity %",    visible: true,  type: "number" },
-                    TestPlanId:         { key: "TestPlanId",         label: "TestPlanId",      visible: true,  type: "string" }
+                    SimilarityPercent:  { key: "SimilarityPercent",  label: "Similarity %",     visible: true,  type: "number" },
+                    Date:               { key: "Date",               label: "Date",             visible: true,  type: "date"   },
+                    Sim100:             { key: "Sim100",             label: "Sim 100",          visible: false, type: "number" },
+                    Sim99:              { key: "Sim99",              label: "Sim 99",           visible: false, type: "number" },
+                    SimLess:            { key: "SimLess",            label: "Sim Less",         visible: false, type: "number" },
+                    Release:            { key: "Release",            label: "Release",          visible: false, type: "string" }
                 });
             }
             if (!vm.getProperty("/tableSort")) {
@@ -702,39 +704,28 @@ sap.ui.define([
         },
         
         onHeaderFilterPress: function (oEvt) {
-            var sCol = oEvt.getSource().data("col");
-            var that = this;
-            var vm = this.getView().getModel("view");
-            var filters = (vm && vm.getProperty("/tableFilters")) || {};
-            var oInput = new sap.m.Input({ placeholder: "Filter value (contains)", width: "260px", value: filters[sCol] || "" });
-            var oPop = new sap.m.Popover({
-                title: "Filter " + sCol,
-                placement: "Bottom",
-                content: [ oInput ],
-                beginButton: new sap.m.Button({
-                    text: "Apply",
-                    press: function () {
-                        var val = oInput.getValue();
-                        if (val && String(val).trim()) filters[sCol] = String(val).trim();
-                        else delete filters[sCol];
-                        vm.setProperty("/tableFilters", filters);
-                        that._applyTableFilters(filters);
-                        oPop.close();
+            // Using latest Fiori column menu instead; keep as no-op fallback
+            MessageToast.show("Use column header menu to filter/sort/group/resize.");
+        },
+
+        // Open SAP Table Personalization (Perso) dialog
+        onOpenTablePerso: function () {
+            var oTable = this.byId("tableView");
+            if (!oTable) {
+                MessageToast.show("Table not available");
+                return;
+            }
+            if (!this._oTPC) {
+                this._oTPC = new TablePersoController({
+                    table: oTable,
+                    persoService: {
+                        getPersData: function () { return Promise.resolve({}); },
+                        setPersData: function (oData) { return Promise.resolve(); },
+                        delPersData: function () { return Promise.resolve(); }
                     }
-                }),
-                endButton: new sap.m.Button({
-                    text: "Clear",
-                    press: function () {
-                        delete filters[sCol];
-                        vm.setProperty("/tableFilters", filters);
-                        that._applyTableFilters(filters);
-                        oPop.close();
-                    }
-                })
-            });
-            this.getView().addDependent(oPop);
-            oPop.addStyleClass("sapUiPopupWithPadding");
-            oPop.openBy(oEvt.getSource());
+                });
+            }
+            this._oTPC.openDialog();
         },
 
         // Chart settings action sheet with Maximize/Restore/Copy actions
@@ -1113,22 +1104,11 @@ sap.ui.define([
                 return true;
             });
 
-            // Update chart dataset (per-plan)
+            // Update chart dataset (per-plan) for charts
             oMock.setProperty("/FilteredFull", aFiltered);
-
-            // Aggregate filtered rows by ProductArea for ChartData/table/chart display
-            var m = {};
-            aFiltered.forEach(function (r) {
-                var pa = (r.ProductArea || "").trim();
-                if (!pa) return;
-                if (!m[pa]) m[pa] = { ProductArea: pa, Sim100: 0, Sim99: 0, SimLess: 0 };
-                m[pa].Sim100 += Number(r.Sim100 || 0);
-                m[pa].Sim99  += Number(r.Sim99 || 0);
-                m[pa].SimLess+= Number(r.SimLess || 0);
-            });
-            var aAgg = Object.keys(m).sort().map(function (k) { return m[k]; });
-
-            oMock.setProperty("/ChartData", aAgg);
+            // Update table dataset to detailed rows (5 core columns and extras)
+            oMock.setProperty("/ChartData", aFiltered);
+            // Keep pie in sync with current set
             this._updatePieChartData(aFiltered);
         }
 
