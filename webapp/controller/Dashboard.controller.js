@@ -30,8 +30,7 @@ sap.ui.define([
             this.getView().setModel(oStateModel, "state");
 
             var oViewModel = new JSONModel({
-                view: "table",
-                chartZoom: 1
+                view: "table"
             });
             this.getView().setModel(oViewModel, "view");
 
@@ -115,9 +114,6 @@ sap.ui.define([
                     // ensure feeds/dataset reflect current type
                     var sType = this.getView().getModel("state").getProperty("/chartType") || "column";
                     this._applyChartConfig(sType);
-                    // apply initial zoom (CSS scale) for chart container
-                    var z = (this.getView().getModel("view").getProperty("/chartZoom") || 1);
-                    if (this._applyChartZoom) { this._applyChartZoom(z); }
                 }
             }.bind(this));
         },
@@ -283,13 +279,7 @@ sap.ui.define([
 
         onViewChange: function(oEvent) {
             var sKey = oEvent.getParameter("key");
-            var oViewModel = this.getView().getModel("view");
-            oViewModel.setProperty("/view", sKey);
-            // when switching back to chart, re-apply current zoom level
-            if (sKey === "chart" && this._applyChartZoom) {
-                var z = oViewModel.getProperty("/chartZoom") || 1;
-                this._applyChartZoom(z);
-            }
+            this.getView().getModel("view").setProperty("/view", sKey);
         },
         
         onToggleLive: function(oEvent) {
@@ -611,139 +601,6 @@ sap.ui.define([
             } catch (e) {
                 if (console && console.error) console.error(e);
                 MessageToast.show("Copy failed");
-            }
-        },
-
-        // Open SVG in new tab (maximize)
-        onMaximizeChart: function () {
-            try {
-                var oViz = this.byId("mainViz");
-                if (!oViz) { sap.m.MessageToast.show("Chart not available"); return; }
-                var dom = oViz.getDomRef();
-                if (!dom) { sap.m.MessageToast.show("Chart not rendered yet"); return; }
-                var svg = dom.querySelector("svg");
-                if (!svg) { sap.m.MessageToast.show("Chart SVG not found"); return; }
-
-                var serializer = new XMLSerializer();
-                var svgString = serializer.serializeToString(svg);
-                if (!/^<svg[^>]+xmlns=/.test(svgString)) {
-                    svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-                }
-                if (!/^<svg[^>]+"http:\/\/www.w3.org\/1999\/xlink"/.test(svgString)) {
-                    svgString = svgString.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-                }
-
-                var w = window.open("", "_blank");
-                if (!w) { sap.m.MessageToast.show("Popup blocked: allow popups to maximize chart."); return; }
-                var html = "<!doctype html><html><head><meta charset='utf-8'><title>Chart - Maximize</title>" +
-                  "<style>html,body{height:100%;margin:0;background:#fff}svg{width:100%;height:100%;}</style></head><body>" +
-                  svgString + "</body></html>";
-                w.document.open();
-                w.document.write(html);
-                w.document.close();
-            } catch (e) {
-                if (console && console.error) console.error(e);
-                sap.m.MessageToast.show("Failed to open chart.");
-            }
-        },
-
-        // Convert SVG -> PNG, open in new tab (and best-effort clipboard)
-        onCopyChart: function () {
-            try {
-                var oViz = this.byId("mainViz");
-                if (!oViz) { sap.m.MessageToast.show("Chart not available"); return; }
-                var dom = oViz.getDomRef();
-                if (!dom) { sap.m.MessageToast.show("Chart not rendered yet"); return; }
-                var svg = dom.querySelector("svg");
-                if (!svg) { sap.m.MessageToast.show("Chart SVG not found"); return; }
-
-                var serializer = new XMLSerializer();
-                var svgString = serializer.serializeToString(svg);
-                if (!/^<svg[^>]+xmlns=/.test(svgString)) {
-                    svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-                }
-                if (!/^<svg[^>]+"http:\/\/www.w3.org\/1999\/xlink"/.test(svgString)) {
-                    svgString = svgString.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-                }
-
-                var blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-                var url = URL.createObjectURL(blob);
-                var img = new Image();
-                img.onload = function () {
-                    try {
-                        var scale = 2; // 2x for higher resolution
-                        var canvas = document.createElement("canvas");
-                        canvas.width = (img.width || 1200) * scale;
-                        canvas.height = (img.height || 600) * scale;
-                        var ctx = canvas.getContext("2d");
-                        ctx.fillStyle = "#ffffff";
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        URL.revokeObjectURL(url);
-                        var dataUrl = canvas.toDataURL("image/png");
-
-                        // Open in new tab for reliable copy/save
-                        var w = window.open("");
-                        if (w) {
-                            var html = "<!doctype html><html><head><meta charset='utf-8'><title>Chart Image</title></head>" +
-                              "<body style='margin:0;padding:10px;background:#fff;'>" +
-                              "<img src='" + dataUrl + "' style='max-width:100%;height:auto;display:block;margin:0 auto;'/>" +
-                              "<p style='text-align:center;font:12px Arial;color:#666'>Right-click the image and choose Copy or Save As.</p>" +
-                              "</body></html>";
-                            w.document.open(); w.document.write(html); w.document.close();
-                        } else {
-                            sap.m.MessageToast.show("Popup blocked: allow popups to open chart image.");
-                        }
-
-                        // Best-effort clipboard write
-                        if (navigator.clipboard && window.ClipboardItem) {
-                            fetch(dataUrl).then(function (res) { return res.blob(); }).then(function (blobPng) {
-                                return navigator.clipboard.write([new window.ClipboardItem({ "image/png": blobPng })]);
-                            }).then(function () {
-                                sap.m.MessageToast.show("Chart image copied to clipboard (if allowed).");
-                            }).catch(function () {
-                                // ignore; opening tab is already enough
-                            });
-                        }
-                    } catch (err) {
-                        URL.revokeObjectURL(url);
-                        sap.m.MessageToast.show("Failed to build chart image.");
-                    }
-                };
-                img.onerror = function(){ URL.revokeObjectURL(url); sap.m.MessageToast.show("Failed to load chart SVG."); };
-                img.src = url;
-            } catch (e) {
-                if (console && console.error) console.error(e);
-                sap.m.MessageToast.show("Failed to copy chart.");
-            }
-        },
-
-        // Zoom controls using CSS transform on chart container
-        onZoomIn: function () {
-            var oView = this.getView().getModel("view");
-            var scale = oView.getProperty("/chartZoom") || 1;
-            scale = Math.min(3, Math.round((scale + 0.25) * 100) / 100);
-            oView.setProperty("/chartZoom", scale);
-            this._applyChartZoom(scale);
-        },
-        onZoomOut: function () {
-            var oView = this.getView().getModel("view");
-            var scale = oView.getProperty("/chartZoom") || 1;
-            scale = Math.max(0.5, Math.round((scale - 0.25) * 100) / 100);
-            oView.setProperty("/chartZoom", scale);
-            this._applyChartZoom(scale);
-        },
-        _applyChartZoom: function (scale) {
-            try {
-                var oChartBox = this.byId("chartContainer");
-                if (!oChartBox) return;
-                var dom = oChartBox.getDomRef();
-                if (!dom) return;
-                dom.style.transformOrigin = "50% 0";
-                dom.style.transform = "scale(" + scale + ")";
-                dom.style.minHeight = (520 * scale) + "px";
-            } catch (e) {
-                if (console && console.warn) console.warn("applyChartZoom failed", e);
             }
         },
 

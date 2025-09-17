@@ -94,16 +94,12 @@
                             <core:Item key="stacked_bar" text="Stacked Bar"/>
                         </items>
                     </Select>
+                    <!-- Chart-only action: visible only in Chart View -->
+                    <Button id="btnChartSettings" text="Chart Settings" icon="sap-icon://chart-axis" press="onOpenChartSettings" visible="{= ${view>/view} === 'chart' }" class="sapUiTinyMarginEnd"/>
                     <Button id="btnExecute" text="Execute" type="Emphasized" enabled="false" tooltip="Requires Authorization from VIC team to activate" press="onExecute" />
                 </OverflowToolbar>
             <viz:Popover id="idPopOver"></viz:Popover>
-            <VBox id="chartContainer" visible="{= ${view>/view} === 'chart' }" class="sapUiSmallMarginTop">
-                <HBox id="chartActions" justifyContent="End" class="sapUiSmallMarginBottom">
-                    <Button id="btnMaximizeChart" text="Maximize" icon="sap-icon://full-screen" press="onMaximizeChart" class="sapUiTinyMarginEnd" />
-                    <Button id="btnCopyChart" text="Copy Chart" icon="sap-icon://copy" press="onCopyChart" class="sapUiTinyMarginEnd" />
-                    <Button id="btnZoomIn" text="Zoom In" icon="sap-icon://zoom-in" press="onZoomIn" class="sapUiTinyMarginEnd" />
-                    <Button id="btnZoomOut" text="Zoom Out" icon="sap-icon://zoom-out" press="onZoomOut" />
-                </HBox>
+            <VBox visible="{= ${view>/view} === 'chart' }" class="sapUiSmallMarginTop">
                 <viz:VizFrame id="mainViz"
                               uiConfig="{applicationSet:'fiori'}"
                               height="420px"
