@@ -131,12 +131,12 @@
                 items="{mock>/ChartData}"
                 class="sapUiResponsiveMargin"
                 width="auto"
-                itemPress="onRowPress" growing="true" growingScrollToLoad="true" enableColumnFreeze="true" enableColumnResize="true">
+                itemPress="onRowPress">
                 <headerToolbar>
                     <Toolbar>
                         <Title text="Data"/>
                         <ToolbarSpacer />
-                        <Button id="btnTableSettings" text="Settings" icon="sap-icon://action-settings" press="onOpenTablePerso" class="sapUiTinyMarginEnd" />
+                        <Button id="btnTableSettings" text="Settings" icon="sap-icon://action-settings" press="onOpenColumnSettings" class="sapUiTinyMarginEnd" />
                         <Button id="btnTableExport" text="Export Excel" icon="sap-icon://excel-attachment" press="onExport" />
                     </Toolbar>
                 </headerToolbar>
@@ -292,29 +292,18 @@
                             </Toolbar>
                         </header>
                     </Column>
-                    <!-- Date (core) -->
-                    <Column id="colDate" visible="{view>/columns/Date/visible}">
-                        <header><Text text="Date"/></header>
-                    </Column>
-                    <!-- Release (extra) -->
-                    <Column id="colRelease" visible="{view>/columns/Release/visible}">
-                        <header><Text text="Release"/></header>
-                    </Column>
                 </columns>
                 <items>
                     <ColumnListItem type="Navigation">
                         <cells>
-                            <!-- 5 core columns -->
-                            <Text text="{mock>TestType}"/>
-                            <Text text="{mock>TestPlan}"/>
-                            <Text text="{mock>ProductArea}"/>
-                            <Text text="{mock>SimilarityPercent}"/>
-                            <Text text="{mock>Date}"/>
-                            <!-- extras (hidden by default; can be enabled via Settings) -->
-                            <Text text="{mock>Sim100}"/>
-                            <Text text="{mock>Sim99}"/>
-                            <Text text="{mock>SimLess}"/>
-                            <Text text="{mock>Release}"/>
+                            <Text text="{mock>ProductArea}" />
+                            <Text text="{mock>TestType}" />
+                            <Text text="{mock>TestPlan}" />
+                            <ObjectNumber number="{mock>Sim100}" />
+                            <ObjectNumber number="{mock>Sim99}" />
+                            <ObjectNumber number="{mock>SimLess}" />
+                            <ObjectNumber number="{mock>SimilarityPercent}" />
+                            <Text text="{mock>TestPlanId}" />
                         </cells>
                     </ColumnListItem>
                 </items>
