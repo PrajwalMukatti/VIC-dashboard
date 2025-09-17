@@ -8,8 +8,10 @@ sap.ui.define([
     "sap/ui/export/library",
     "sap/ui/export/Spreadsheet",
     "sap/m/MessageToast",
+    "sap/m/ActionSheet",
+    "sap/m/Dialog",
     "sap/vic/dashboard/model/rowAdapter"
-], function (Controller, JSONModel, Fragment, VizFrame, FlattenedDataset, FeedItem, exportLibrary, Spreadsheet, MessageToast, RowAdapter) {
+], function (Controller, JSONModel, Fragment, VizFrame, FlattenedDataset, FeedItem, exportLibrary, Spreadsheet, MessageToast, ActionSheet, Dialog, RowAdapter) {
     "use strict";
 
     return Controller.extend("sap.vic.dashboard.controller.Dashboard", {
@@ -486,6 +488,120 @@ sap.ui.define([
                 this._pColumnSettings.then(function (oDialog) { oDialog.close(); });
             }
             // optional: adjust table columns by model /Columns mapping in future
+        },
+
+        // Chart settings action sheet with Maximize/Restore/Copy actions
+        onOpenChartSettings: function () {
+            var that = this;
+            if (!this._oChartActionSheet) {
+                this._oChartActionSheet = new ActionSheet({
+                    placement: "Bottom",
+                    buttons: [
+                        new sap.m.Button({ text: "Maximize", icon: "sap-icon://full-screen", press: function(){ that._openChartFullscreen(); } }),
+                        new sap.m.Button({ text: "Restore", icon: "sap-icon://exit-full-screen", press: function(){ that._closeChartFullscreen(); } }),
+                        new sap.m.Button({ text: "Copy Chart", icon: "sap-icon://copy", press: function(){ that._copyChartToClipboard(); } })
+                    ]
+                });
+                this.getView().addDependent(this._oChartActionSheet);
+            }
+            var oBtn = this.byId("btnChartSettings");
+            if (oBtn) {
+                this._oChartActionSheet.openBy(oBtn);
+            } else {
+                this._oChartActionSheet.open();
+            }
+        },
+
+        _openChartFullscreen: function () {
+            var that = this;
+            var oViz = this.byId("mainViz");
+            if (!oViz) { MessageToast.show("Chart not available"); return; }
+
+            if (!this._oChartDlg) {
+                this._oChartDlg = new Dialog({
+                    title: "Chart",
+                    stretch: true,
+                    horizontalScrolling: false,
+                    verticalScrolling: false,
+                    endButton: new sap.m.Button({ text: "Close", press: function(){ that._closeChartFullscreen(); } })
+                });
+                this.getView().addDependent(this._oChartDlg);
+            }
+
+            if (!this._vizParent) {
+                this._vizParent = oViz.getParent();
+            }
+            // detach from parent
+            if (this._vizParent) {
+                if (this._vizParent.removeItem) { this._vizParent.removeItem(oViz); }
+                else if (this._vizParent.removeContent) { this._vizParent.removeContent(oViz); }
+            }
+            this._oChartDlg.addContent(oViz);
+            this._oChartDlg.open();
+        },
+
+        _closeChartFullscreen: function () {
+            var oViz = this.byId("mainViz");
+            if (this._oChartDlg) {
+                this._oChartDlg.close();
+                if (oViz) {
+                    this._oChartDlg.removeContent(oViz);
+                }
+            }
+            if (oViz && this._vizParent) {
+                if (this._vizParent.addItem) { this._vizParent.addItem(oViz); }
+                else if (this._vizParent.addContent) { this._vizParent.addContent(oViz); }
+            }
+        },
+
+        _copyChartToClipboard: function () {
+            var oViz = this.byId("mainViz");
+            if (!oViz) { MessageToast.show("Chart not available"); return; }
+            var el = oViz.getDomRef && oViz.getDomRef();
+            if (!el) { MessageToast.show("Chart not rendered yet"); return; }
+            var svg = el.querySelector && el.querySelector("svg");
+            if (!svg) { MessageToast.show("Chart SVG not found"); return; }
+
+            try {
+                var xml = new XMLSerializer().serializeToString(svg);
+                var svgBlob = new Blob([xml], { type: "image/svg+xml;charset=utf-8" });
+                var url = URL.createObjectURL(svgBlob);
+                var img = new Image();
+                img.onload = function () {
+                    var canvas = document.createElement("canvas");
+                    canvas.width = img.width || 1600;
+                    canvas.height = img.height || 900;
+                    var ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    canvas.toBlob(function (blob) {
+                        if (navigator.clipboard && window.ClipboardItem) {
+                            navigator.clipboard.write([new window.ClipboardItem({ "image/png": blob })])
+                                .then(function () { MessageToast.show("Chart copied to clipboard"); })
+                                .catch(function () {
+                                    var a = document.createElement("a");
+                                    a.href = URL.createObjectURL(blob);
+                                    a.download = "chart.png";
+                                    a.click();
+                                    MessageToast.show("Downloaded chart.png");
+                                });
+                        } else {
+                            var a = document.createElement("a");
+                            a.href = URL.createObjectURL(blob);
+                            a.download = "chart.png";
+                            a.click();
+                            MessageToast.show("Downloaded chart.png");
+                        }
+                        URL.revokeObjectURL(url);
+                    }, "image/png");
+                };
+                img.onerror = function(){ URL.revokeObjectURL(url); MessageToast.show("Copy failed"); };
+                img.src = url;
+            } catch (e) {
+                if (console && console.error) console.error(e);
+                MessageToast.show("Copy failed");
+            }
         },
 
         // New: change handler for any FilterBar field (live filtering + dependent lists)
