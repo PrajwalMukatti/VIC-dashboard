@@ -212,15 +212,16 @@ sap.ui.define([
         },
         
         onSignOut: function () {
+            // Navigate to a friendly goodbye screen
             try {
-                if (sap && sap.ushell && sap.ushell.Container && sap.ushell.Container.logout) {
-                    sap.ushell.Container.logout();
+                var oRouter = sap.ui.core.UIComponent.getRouterFor(this);
+                if (oRouter) {
+                    oRouter.navTo("goodbye", {}, true);
                     return;
                 }
             } catch (e) { /* ignore */ }
-            // Standalone fallback
-            MessageToast.show("Signing out...");
-            setTimeout(function(){ window.location.href = "/"; }, 600);
+            // Fallback: inline message
+            MessageToast.show("Thank you for using VIC. Have a wonderful day!");
         },
 
         onPressAppLogo: function () {

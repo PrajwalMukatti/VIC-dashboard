@@ -36,3 +36,18 @@
   font-weight: 800 !important;
   line-height: 1.2 !important;
 }
+
+/* Goodbye view styles: full-screen centered bold message */
+.goodbyeContainer {
+  min-height: calc(100vh - 0px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.goodbyeMessage {
+  font-size: 3rem;
+  font-weight: 900;
+  text-align: center;
+}

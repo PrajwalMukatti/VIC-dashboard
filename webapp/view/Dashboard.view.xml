@@ -21,10 +21,9 @@
                         title="{shell>/ui/shell/title}"
                         secondTitle="{shell>/ui/shell/subTitle}"
                         homeIcon="sap-icon://home"
-                        showNotifications="true"
+                        showNotifications="false"
                         showSearch="false"
                         showProductSwitcher="false"
-                        notificationsPressed="onNotificationsPressed"
                         avatarPressed="onProfilePressed"
                         homeIconPressed="onPressAppLogo"
                         visible="{= !${state>/isInFLP} }">

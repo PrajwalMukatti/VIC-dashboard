@@ -95,6 +95,11 @@
                     "pattern": "detail/{id}",
                     "name": "detail",
                     "target": "detail"
+                },
+                {
+                    "pattern": "goodbye",
+                    "name": "goodbye",
+                    "target": "goodbye"
                 }
             ],
             "targets": {
@@ -105,6 +110,10 @@
                 "detail": {
                     "viewId": "detail",
                     "viewName": "Detail"
+                },
+                "goodbye": {
+                    "viewId": "goodbye",
+                    "viewName": "Goodbye"
                 }
             }
         }
