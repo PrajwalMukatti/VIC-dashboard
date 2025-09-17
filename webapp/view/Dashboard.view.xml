@@ -11,7 +11,7 @@
     xmlns:core="sap.ui.core">
 <f:DynamicPage id="dynamicPageId"
                    headerExpanded="{state>/headerExpanded}"
-                   preserveHeaderStateOnScroll="{state>/headerPinned}">
+                   toggleHeaderOnTitleClick="true">
         
         <f:header>
             <f:DynamicPageHeader>
@@ -37,10 +37,6 @@
                             </HBox>
                         </f:additionalContent>
                     </f:ShellBar>
-                    <HBox class="sapUiTinyMarginTop sapUiTinyMarginBottom" justifyContent="End">
-                        <ToggleButton id="btnPinHeader" text="Pin Header" pressed="{state>/headerPinned}" press="onTogglePinHeader" class="sapUiTinyMarginEnd"/>
-                        <Button id="btnToggleHeader" icon="{= ${state>/headerExpanded} ? 'sap-icon://collapse-group' : 'sap-icon://expand-group' }" type="Transparent" tooltip="{= ${state>/headerExpanded} ? 'Collapse Header' : 'Expand Header' }" press="onToggleHeaderExpand"/>
-                    </HBox>
                     <fb:FilterBar id="filterbar" useToolbar="false" search="onPressGo" showGoOnFB="true" showClearOnFB="true" clear="onFilterBarClear">
                         <fb:filterGroupItems>
                             <fb:FilterGroupItem groupName="primary" name="testType" label="Test Type" visibleInFilterBar="true">
@@ -148,7 +144,7 @@
             <Table
                 id="tableView"
                 visible="{= ${view>/view} === 'table' }"
-                items="{mock>/ChartData}"
+                items="{mock>/FilteredFull}"
                 class="sapUiResponsiveMargin"
                 width="auto"
                 itemPress="onRowPress">
@@ -180,25 +176,6 @@
                         </header>
                     </Column>
 
-                    <Column visible="{view>/columns/TestType/visible}">
-                        <header>
-                            <Toolbar>
-                                <Title text="Test Type"/>
-                                <ToolbarSpacer/>
-                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
-                                    <customData>
-                                        <core:CustomData key="col" value="TestType"/>
-                                    </customData>
-                                </Button>
-                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
-                                    <customData>
-                                        <core:CustomData key="col" value="TestType"/>
-                                    </customData>
-                                </Button>
-                            </Toolbar>
-                        </header>
-                    </Column>
-
                     <Column visible="{view>/columns/TestPlan/visible}">
                         <header>
                             <Toolbar>
@@ -212,6 +189,25 @@
                                 <Button icon="sap-icon://sort" press="onHeaderSortPress">
                                     <customData>
                                         <core:CustomData key="col" value="TestPlan"/>
+                                    </customData>
+                                </Button>
+                            </Toolbar>
+                        </header>
+                    </Column>
+
+                    <Column visible="{view>/columns/TestType/visible}">
+                        <header>
+                            <Toolbar>
+                                <Title text="Test Type"/>
+                                <ToolbarSpacer/>
+                                <Button icon="sap-icon://filter" press="onHeaderFilterPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestType"/>
+                                    </customData>
+                                </Button>
+                                <Button icon="sap-icon://sort" press="onHeaderSortPress">
+                                    <customData>
+                                        <core:CustomData key="col" value="TestType"/>
                                     </customData>
                                 </Button>
                             </Toolbar>
@@ -317,8 +313,8 @@
                     <ColumnListItem type="Navigation">
                         <cells>
                             <Text text="{mock>ProductArea}" />
-                            <Text text="{mock>TestType}" />
                             <Text text="{mock>TestPlan}" />
+                            <Text text="{mock>TestType}" />
                             <ObjectNumber number="{mock>Sim100}" />
                             <ObjectNumber number="{mock>Sim99}" />
                             <ObjectNumber number="{mock>SimLess}" />

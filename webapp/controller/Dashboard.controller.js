@@ -172,7 +172,23 @@ sap.ui.define([
             var aFiltered = aFull.filter(function (r) {
                 return (r && r.TestPlan && String(r.TestPlan).toLowerCase().indexOf(s) !== -1);
             });
-            oMock.setProperty("/ChartData", aFiltered);
+            // Table shows one row per Test Plan
+            oMock.setProperty("/FilteredFull", aFiltered);
+            // Keep aggregated dataset in sync for charts
+            var m = {};
+            aFiltered.forEach(function (r) {
+                var pa = (r.ProductArea || "").trim();
+                if (!pa) return;
+                if (!m[pa]) m[pa] = { ProductArea: pa, Sim100: 0, Sim99: 0, SimLess: 0 };
+                m[pa].Sim100 += Number(r.Sim100 || 0);
+                m[pa].Sim99  += Number(r.Sim99 || 0);
+                m[pa].SimLess+= Number(r.SimLess || 0);
+            });
+            var aAgg = Object.keys(m).sort().map(function (k) { return m[k]; });
+            oMock.setProperty("/ChartData", aAgg);
+            if (typeof this._updatePieChartData === "function") {
+                this._updatePieChartData(aFiltered);
+            }
             // Show table view for results
             var oVM = this.getView().getModel("view");
             if (oVM) { oVM.setProperty("/view", "table"); }
@@ -651,14 +667,14 @@ sap.ui.define([
             }
             if (!vm.getProperty("/columns")) {
                 vm.setProperty("/columns", {
-                    ProductArea:        { key: "ProductArea",        label: "Product Area",     visible: true,  type: "string" },
-                    TestType:           { key: "TestType",           label: "Test Type",       visible: true,  type: "string" },
-                    TestPlan:           { key: "TestPlan",           label: "Test Plan",       visible: true,  type: "string" },
-                    Sim100:             { key: "Sim100",             label: "Sim 100",         visible: true,  type: "number" },
-                    Sim99:              { key: "Sim99",              label: "Sim 99",          visible: true,  type: "number" },
-                    SimLess:            { key: "SimLess",            label: "Sim Less",        visible: true,  type: "number" },
-                    SimilarityPercent:  { key: "SimilarityPercent",  label: "Similarity %",    visible: true,  type: "number" },
-                    TestPlanId:         { key: "TestPlanId",         label: "TestPlanId",      visible: true,  type: "string" }
+                    ProductArea:        { key: "ProductArea",        label: "Product Area",     visible: true,   type: "string" },
+                    TestType:           { key: "TestType",           label: "Test Type",       visible: true,   type: "string" },
+                    TestPlan:           { key: "TestPlan",           label: "Test Plan",       visible: true,   type: "string" },
+                    SimilarityPercent:  { key: "SimilarityPercent",  label: "Similarity %",    visible: true,   type: "number" },
+                    Sim100:             { key: "Sim100",             label: "Sim 100",         visible: false,  type: "number" },
+                    Sim99:              { key: "Sim99",              label: "Sim 99",          visible: false,  type: "number" },
+                    SimLess:            { key: "SimLess",            label: "Sim Less",        visible: false,  type: "number" },
+                    TestPlanId:         { key: "TestPlanId",         label: "TestPlanId",      visible: false,  type: "string" }
                 });
             }
             if (!vm.getProperty("/tableSort")) {
