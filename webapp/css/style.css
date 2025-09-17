@@ -1,0 +1,29 @@
+/* VIC Dashboard custom styles */
+
+/* Make ShellBar title larger and bolder */
+.vicShellBar .sapFShellBarTitle,
+.vicShellBar .sapFShellBar-title {
+  font-size: 1.6rem; /* larger title */
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+}
+
+/* Center the ShellBar SearchField and make it responsive */
+.vicSearchWrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1 1 auto;
+}
+
+.vicSearchWrap .sapMSF {
+  width: 40%;
+  min-width: 280px;
+  max-width: 720px;
+}
+
+/* Optional: tweak ShellBar spacing a bit */
+.vicShellBar .sapFShellBar {
+  padding-inline: 0.5rem;
+}

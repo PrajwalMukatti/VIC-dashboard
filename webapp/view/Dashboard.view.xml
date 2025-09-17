@@ -17,6 +17,7 @@
                 <f:content>
                     <f:ShellBar
                         id="appShellBar"
+                        class="vicShellBar"
                         title="{shell>/ui/shell/title}"
                         secondTitle="{shell>/ui/shell/subTitle}"
                         homeIcon="sap-icon://home"
@@ -29,7 +30,9 @@
                             <f:Avatar initials="{shell>/ui/shell/profile/initials}" />
                         </f:profile>
                         <f:additionalContent>
-                            <SearchField width="280px" placeholder="Search..." search="onShellSearch"/>
+                            <HBox width="100%" justifyContent="Center" class="vicSearchWrap">
+                                <SearchField width="40%" placeholder="Search..." search="onShellSearch"/>
+                            </HBox>
                         </f:additionalContent>
                     </f:ShellBar>
                     <fb:FilterBar id="filterbar" useToolbar="false" search="onPressGo" showGoOnFB="true" showClearOnFB="true" clear="onFilterBarClear">

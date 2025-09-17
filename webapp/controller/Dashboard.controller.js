@@ -63,6 +63,9 @@ sap.ui.define([
                 var sSavedTheme = (window.localStorage && localStorage.getItem("uiTheme")) || null;
                 if (sSavedTheme) {
                     sap.ui.getCore().applyTheme(sSavedTheme);
+                } else {
+                    // Default to Horizon Dark if no saved theme
+                    sap.ui.getCore().applyTheme("sap_horizon_dark");
                 }
             } catch (e) { /* no-op */ }
 
@@ -186,7 +189,8 @@ sap.ui.define([
                         new sap.m.Button({ text: "Horizon (Light)",    icon: "sap-icon://palette",     press: function(){ that._setTheme("sap_horizon"); } }),
                         new sap.m.Button({ text: "Horizon (Dark)",     icon: "sap-icon://palette",     press: function(){ that._setTheme("sap_horizon_dark"); } }),
                         new sap.m.Button({ text: "High Contrast Black",icon: "sap-icon://contrast",    press: function(){ that._setTheme("sap_horizon_hcb"); } }),
-                        new sap.m.Button({ text: "High Contrast White",icon: "sap-icon://contrast",    press: function(){ that._setTheme("sap_horizon_hcw"); } })
+                        new sap.m.Button({ text: "High Contrast White",icon: "sap-icon://contrast",    press: function(){ that._setTheme("sap_horizon_hcw"); } }),
+                        new sap.m.Button({ text: "Sign Out",           type: "Reject",                 icon: "sap-icon://log",          press: function(){ that.onSignOut(); } })
                     ]
                 });
                 this.getView().addDependent(this._oThemeSheet);
@@ -204,6 +208,18 @@ sap.ui.define([
             } catch (e) {
                 MessageToast.show("Failed to apply theme");
             }
+        },
+        
+        onSignOut: function () {
+            try {
+                if (sap && sap.ushell && sap.ushell.Container && sap.ushell.Container.logout) {
+                    sap.ushell.Container.logout();
+                    return;
+                }
+            } catch (e) { /* ignore */ }
+            // Standalone fallback
+            MessageToast.show("Signing out...");
+            setTimeout(function(){ window.location.href = "/"; }, 600);
         },
 
         onPressAppLogo: function () {
