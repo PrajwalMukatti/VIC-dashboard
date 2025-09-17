@@ -94,6 +94,8 @@
                             <core:Item key="stacked_bar" text="Stacked Bar"/>
                         </items>
                     </Select>
+                    <!-- Chart-only action: visible only in Chart View -->
+                    <Button id="btnChartSettings" text="Chart Settings" icon="sap-icon://chart-axis" press="onOpenChartSettings" visible="{= ${view>/view} === 'chart' }" class="sapUiTinyMarginEnd"/>
                     <Button id="btnExecute" text="Execute" type="Emphasized" enabled="false" tooltip="Requires Authorization from VIC team to activate" press="onExecute" />
                 </OverflowToolbar>
             <viz:Popover id="idPopOver"></viz:Popover>

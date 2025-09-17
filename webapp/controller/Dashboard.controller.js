@@ -83,6 +83,8 @@ sap.ui.define([
                     aAgg = Object.keys(m).sort().map(function (k) { return m[k]; });
                 }
                 oMockDataModel.setProperty("/ChartData", aAgg);
+                // Initialize filtered full dataset for charts (per-plan data)
+                oMockDataModel.setProperty("/FilteredFull", aFull.slice(0));
                 // Init selections (arrays for multi-select) and compute initial dependent lists
                 oMockDataModel.setProperty("/Selections", {
                     TestType: [], ProductArea: [], TestPlan: [], Similarity: [], DateFrom: null, DateTo: null
@@ -330,10 +332,10 @@ sap.ui.define([
                     oViz.setVizProperties({ plotArea: { innerRadius: 0 } });
                 }
             } else {
-                // Column / Bar / Line / Stacked variants on ChartData
+                // Column / Bar / Line / Stacked variants on per-plan dataset
                 var oDataset = new FlattenedDataset({
-                    data: { path: "mock>/ChartData" },
-                    dimensions: [{ name: "ProductArea", value: "{mock>ProductArea}" }],
+                    data: { path: "mock>/FilteredFull" },
+                    dimensions: [{ name: "TestPlan", value: "{mock>TestPlan}" }],
                     measures: [
                         { name: "Sim100", value: "{mock>Sim100}" },
                         { name: "Sim99", value: "{mock>Sim99}" },
@@ -343,7 +345,7 @@ sap.ui.define([
                 oViz.setDataset(oDataset);
 
                 var feedValue = new FeedItem({ uid: "valueAxis", type: "Measure", values: ["Sim100","Sim99","SimLess"] });
-                var feedCategory = new FeedItem({ uid: "categoryAxis", type: "Dimension", values: ["ProductArea"] });
+                var feedCategory = new FeedItem({ uid: "categoryAxis", type: "Dimension", values: ["TestPlan"] });
                 oViz.addFeed(feedValue);
                 oViz.addFeed(feedCategory);
 
@@ -707,6 +709,9 @@ sap.ui.define([
                 }
                 return true;
             });
+
+            // Update chart dataset (per-plan)
+            oMock.setProperty("/FilteredFull", aFiltered);
 
             // Aggregate filtered rows by ProductArea for ChartData/table/chart display
             var m = {};
