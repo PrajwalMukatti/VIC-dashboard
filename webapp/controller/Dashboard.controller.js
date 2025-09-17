@@ -38,6 +38,27 @@ sap.ui.define([
             // Initialize table column metadata, sort/filter state for Table View
             this._onInitTableSettings();
 
+            // ShellBar: ensure 'shell' model and detect FLP environment to control visibility
+            if (!this.getView().getModel("shell")) {
+                this.getView().setModel(new JSONModel({
+                    ui: {
+                        shell: {
+                            logo: "/resources/sap-ui-core/images/sap-logo.png",
+                            title: "VIC Dashboard",
+                            subTitle: "Version 2",
+                            profile: { initials: "VD" },
+                            version: "v2"
+                        }
+                    }
+                }), "shell");
+            }
+            try {
+                var bInFLP = !!(window.sap && sap.ushell && sap.ushell.Container);
+                this.getOwnerComponent().getModel("state").setProperty("/isInFLP", bInFLP);
+            } catch (e) {
+                this.getOwnerComponent().getModel("state").setProperty("/isInFLP", false);
+            }
+
             // Load mock data as named model
             var oMockDataModel = new JSONModel();
             oMockDataModel.loadData("model/mockData.json");
@@ -123,6 +144,45 @@ sap.ui.define([
                     if (this._applyChartZoom) { this._applyChartZoom(z); }
                 }
             }.bind(this));
+        },
+
+        // ShellBar handlers (visible only when not inside FLP)
+        onShellSearch: function (oEvent) {
+            var sQuery = oEvent && (oEvent.getParameter("query") || oEvent.getParameter("value"));
+            if (!sQuery || !String(sQuery).trim()) {
+                // No-op; keep current dataset
+                return;
+            }
+            var oMock = this.getView().getModel("mock");
+            var aFull = oMock.getProperty("/ChartDataFull") || [];
+            var s = String(sQuery).toLowerCase();
+            var aFiltered = aFull.filter(function (r) {
+                return (r && r.TestPlan && String(r.TestPlan).toLowerCase().indexOf(s) !== -1);
+            });
+            oMock.setProperty("/ChartData", aFiltered);
+            // Show table view for results
+            var oVM = this.getView().getModel("view");
+            if (oVM) { oVM.setProperty("/view", "table"); }
+            MessageToast.show("Search results: " + aFiltered.length);
+        },
+
+        onNotificationsPressed: function () {
+            MessageToast.show("Notifications – implement list here.");
+        },
+
+        onProfilePressed: function () {
+            MessageToast.show("Profile – open user menu here.");
+        },
+
+        onPressAppLogo: function () {
+            // Simple home action: switch to chart view
+            var oVM = this.getView().getModel("view");
+            if (oVM) { oVM.setProperty("/view", "chart"); }
+            MessageToast.show("Home");
+        },
+
+        onPressHelp: function () {
+            MessageToast.show("Help – open documentation.");
         },
 
         onValueHelpRequested: function (oEvent) {

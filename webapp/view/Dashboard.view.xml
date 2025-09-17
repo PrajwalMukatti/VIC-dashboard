@@ -21,6 +21,25 @@
         <f:header>
             <f:DynamicPageHeader>
                 <f:content>
+                    <f:ShellBar
+                        id="appShellBar"
+                        title="{shell>/ui/shell/title}"
+                        subtitle="{shell>/ui/shell/subTitle}"
+                        homeIcon="sap-icon://home"
+                        showNotifications="true"
+                        search="onShellSearch"
+                        notificationsPressed="onNotificationsPressed"
+                        profilePressed="onProfilePressed"
+                        homeIconPressed="onPressAppLogo"
+                        visible="{= !${state>/isInFLP} }">
+                        <f:profile>
+                            <Avatar initials="{shell>/ui/shell/profile/initials}" />
+                        </f:profile>
+                        <f:actions>
+                            <Button icon="sap-icon://question-mark" tooltip="Help" press="onPressHelp"/>
+                            <Text text="{shell>/ui/shell/version}" wrapping="false" />
+                        </f:actions>
+                    </f:ShellBar>
                     <fb:FilterBar id="filterbar" useToolbar="false" search="onPressGo" showGoOnFB="true" showClearOnFB="true" clear="onFilterBarClear">
                         <fb:filterGroupItems>
                             <fb:FilterGroupItem groupName="primary" name="testType" label="Test Type" visibleInFilterBar="true">
