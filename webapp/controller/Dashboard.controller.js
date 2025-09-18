@@ -142,8 +142,6 @@ sap.ui.define([
             this.getOwnerComponent().getEventBus().subscribe("vic", "odataAvailable", this._onODataAvailable, this);
 
             this.getView().attachAfterRendering(function() {
-                // Trigger confetti on Goodbye view if the canvas is present
-                this._startConfettiIfPresent();
                 var oViz = this.getView().byId("mainViz");
                 if (oViz) {
                     // basic properties + labels
@@ -391,94 +389,6 @@ sap.ui.define([
             ];
 
             oMockModel.setProperty("/PieChartData", aPieChartData);
-        },
-
-        // Lightweight canvas confetti when Goodbye view is shown
-        _startConfettiIfPresent: function () {
-            try {
-                var canvas = document.getElementById("goodbyeConfetti");
-                if (!canvas) return;
-                var ctx = canvas.getContext("2d");
-                function resize() {
-                    canvas.width = window.innerWidth;
-                    canvas.height = window.innerHeight;
-                }
-                resize();
-                var onResize = function(){ resize(); };
-                window.addEventListener("resize", onResize);
-
-                var colors = ["#ffd166", "#06d6a0", "#118ab2", "#ef476f", "#8338ec", "#ff006e"];
-                var pieces = [];
-                var COUNT = Math.min(220, Math.floor((canvas.width * canvas.height) / 18000));
-                for (var i = 0; i < COUNT; i++) {
-                    pieces.push({
-                        x: Math.random() * canvas.width,
-                        y: Math.random() * -canvas.height,
-                        w: 6 + Math.random() * 6,
-                        h: 8 + Math.random() * 12,
-                        r: Math.random() * Math.PI,
-                        dr: (Math.random() - 0.5) * 0.2,
-                        vy: 2 + Math.random() * 3,
-                        vx: (Math.random() - 0.5) * 1.2,
-                        color: colors[(Math.random() * colors.length) | 0],
-                        alpha: 1
-                    });
-                }
-
-                var start = performance.now();
-                var duration = 4500; // ms
-                var fadeStart = 3500;
-                var rafId = 0;
-
-                function step(now) {
-                    var elapsed = now - start;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                    pieces.forEach(function(p) {
-                        p.x += p.vx;
-                        p.y += p.vy;
-                        p.r += p.dr;
-
-                        if (elapsed > fadeStart) {
-                            var t = (elapsed - fadeStart) / (duration - fadeStart);
-                            p.alpha = Math.max(0, 1 - t);
-                        }
-
-                        if (p.y - 20 > canvas.height) {
-                            p.y = -20;
-                            p.x = Math.random() * canvas.width;
-                            p.vy = 2 + Math.random() * 3;
-                            p.vx = (Math.random() - 0.5) * 1.2;
-                            p.alpha = 1;
-                        }
-
-                        ctx.save();
-                        ctx.globalAlpha = p.alpha;
-                        ctx.translate(p.x, p.y);
-                        ctx.rotate(p.r);
-                        ctx.fillStyle = p.color;
-                        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-                        ctx.restore();
-                    });
-
-                    if (elapsed < duration) {
-                        rafId = requestAnimationFrame(step);
-                    } else {
-                        // cleanup
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        if (canvas && canvas.parentNode) {
-                            // keep canvas but hide it after animation
-                            canvas.style.display = "none";
-                        }
-                        window.removeEventListener("resize", onResize);
-                        cancelAnimationFrame(rafId);
-                    }
-                }
-                canvas.style.display = "block";
-                rafId = requestAnimationFrame(step);
-            } catch (e) {
-                // fail silently
-            }
         },
 
         // Update table row count used in the header title "Test Data (N)"
