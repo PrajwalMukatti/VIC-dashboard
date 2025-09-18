@@ -152,6 +152,19 @@ sap.ui.define([
                     var oPopOver = this.getView().byId("idPopOver");
                     if (oPopOver) {
                         oPopOver.connect(oViz.getVizUid());
+                        if (!this._navActionAdded) {
+                            this._navActionAdded = true;
+                            try {
+                                if (oPopOver.removeAllActionItems) { oPopOver.removeAllActionItems(); }
+                                if (oPopOver.addActionItem) {
+                                    oPopOver.addActionItem(new sap.m.Button({
+                                        text: "Open Test Plan",
+                                        type: "Emphasized",
+                                        press: function () { this._openSelectedTestPlan(); }.bind(this)
+                                    }));
+                                }
+                            } catch (e) { /* no-op */ }
+                        }
                     }
                     // ensure feeds/dataset reflect current type
                     var sType = this.getView().getModel("state").getProperty("/chartType") || "column";
@@ -570,21 +583,30 @@ sap.ui.define([
         },
 
         onChartSelect: function (oEvent) {
-            var aData = oEvent.getParameter("data");
+            var aData = oEvent && oEvent.getParameter && oEvent.getParameter("data");
             if (!aData || !aData.length) { return; }
-            var oHit = aData[0];
-            var oData = (oHit && (oHit.data || oHit.dataContext)) || {};
+            var oHit = aData[0] || {};
+            var oData = oHit.data || oHit.dataContext || {};
 
-            // Prefer explicit TestPlanId, then TestPlan
-            var sPlanId = oData.TestPlanId || oData.testPlanId || oData.TestPlan || oData.testplan;
-            if (sPlanId) {
-                this._navigateToTestPlan(String(sPlanId));
-                return;
+            // Extract Test Plan robustly
+            var sPlan = null;
+            if (oData) {
+                // direct keys (case variations)
+                sPlan = oData.TestPlan || oData.testPlan || oData["Test Plan"] || oData.testplan;
+                // prefer explicit id if present
+                var sId = oData.TestPlanId || oData.testPlanId;
+                if (!sPlan && sId) { sPlan = sId; }
+                // fallback to label from pie/other charts
+                if (!sPlan && oData.label) { sPlan = oData.label; }
             }
-            // Fallback: navigate with ProductArea/label
-            var sArea = oData.ProductArea || oData.productarea || oData.label;
-            if (sArea) {
-                this._navigateToTestPlan("AREA-" + String(sArea));
+
+            // remember the last selected plan for Popover action
+            this._lastSelectedTestPlan = sPlan || null;
+
+            if (sPlan) {
+                this._navigateToTestPlan(String(sPlan));
+            } else {
+                sap.m.MessageToast.show("No Test Plan found in selection");
             }
         },
 
@@ -619,6 +641,15 @@ sap.ui.define([
             }
             // Fallback to hash navigation (dummy page)
             window.location.hash = "#/TestPlan/" + encodeURIComponent(sTestPlanId);
+        },
+
+        // Popover action: open last selected Test Plan
+        _openSelectedTestPlan: function () {
+            if (this._lastSelectedTestPlan) {
+                this._navigateToTestPlan(String(this._lastSelectedTestPlan));
+            } else {
+                sap.m.MessageToast.show("Select a Test Plan on the chart first");
+            }
         },
 
         onRowPress: function(oEvent) {
