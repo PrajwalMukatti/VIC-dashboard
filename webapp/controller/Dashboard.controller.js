@@ -157,11 +157,12 @@ sap.ui.define([
                             try {
                                 if (oPopOver.removeAllActionItems) { oPopOver.removeAllActionItems(); }
                                 if (oPopOver.addActionItem) {
-                                    oPopOver.addActionItem(new sap.m.Button({
+                                    // Add a hyperlink-style action inside viz Popover
+                                    this._oVizPlanLink = new sap.m.Link({
                                         text: "Open Test Plan",
-                                        type: "Emphasized",
                                         press: function () { this._openSelectedTestPlan(); }.bind(this)
-                                    }));
+                                    });
+                                    oPopOver.addActionItem(this._oVizPlanLink);
                                 }
                             } catch (e) { /* no-op */ }
                         }
@@ -604,7 +605,11 @@ sap.ui.define([
             this._lastSelectedTestPlan = sPlan || null;
 
             if (sPlan) {
-                this._navigateToTestPlan(String(sPlan));
+                // remember selection and update link text in viz Popover
+                if (this._oVizPlanLink && this._oVizPlanLink.setText) {
+                    this._oVizPlanLink.setText(String(sPlan));
+                }
+                // do not auto-navigate; user will click hyperlink in Popover
             } else {
                 sap.m.MessageToast.show("No Test Plan found in selection");
             }
@@ -649,6 +654,39 @@ sap.ui.define([
                 this._navigateToTestPlan(String(this._lastSelectedTestPlan));
             } else {
                 sap.m.MessageToast.show("Select a Test Plan on the chart first");
+            }
+        },
+
+        // Show a simple popover with a hyperlink to navigate to the selected Test Plan
+        _showNavPopover: function (sPlan) {
+            try {
+                if (!sPlan) { return; }
+                this._lastSelectedTestPlan = sPlan;
+                if (!this._oPlanLink) {
+                    this._oPlanLink = new sap.m.Link({
+                        text: sPlan,
+                        emphasized: true,
+                        press: function () { this._navigateToTestPlan(String(this._lastSelectedTestPlan || sPlan)); }.bind(this)
+                    });
+                } else {
+                    this._oPlanLink.setText(sPlan);
+                }
+                if (!this._oPlanPopover) {
+                    this._oPlanPopover = new sap.m.Popover({
+                        title: "Open Test Plan",
+                        placement: "Auto",
+                        content: [ this._oPlanLink ]
+                    });
+                    this.getView().addDependent(this._oPlanPopover);
+                }
+                var oAnchor = this.byId("mainViz");
+                if (this._oPlanPopover.isOpen && this._oPlanPopover.isOpen()) {
+                    this._oPlanPopover.close();
+                }
+                this._oPlanPopover.openBy(oAnchor);
+            } catch (e) {
+                // Fallback: direct navigation
+                this._navigateToTestPlan(String(sPlan));
             }
         },
 
