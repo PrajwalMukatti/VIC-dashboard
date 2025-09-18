@@ -8,7 +8,7 @@
   <Page showHeader="false">
     <content>
       <!-- Fullscreen confetti canvas overlay -->
-      <core:HTML content="<canvas id='goodbyeConfetti' style='position:fixed; inset:0; pointer-events:none; z-index: 9999;'></canvas>" />
+      <core:HTML sanitizeContent="false" content="<canvas id='goodbyeConfetti' style='position:fixed; inset:0; pointer-events:none; z-index: 9999;'></canvas>" />
       <VBox class="goodbyeContainer" width="100%">
         <Text text="thank you for using VIC have a wonderful day" class="goodbyeMessage" />
       </VBox>
