@@ -1,0 +1,78 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+	<Dialog id="compareDialog"
+			contentWidth="60%"
+			contentHeight="35%"
+			draggable="true"
+			resizable="true"
+			class="sapUiResponsivePadding--header sapUiResponsivePadding--content sapUiResponsivePadding--footer">
+
+		<customHeader>
+			<Bar>
+				<contentLeft>
+					<Title text="Compare UI5 Versions"/>
+				</contentLeft>
+				<contentRight>
+					<Button icon="sap-icon://decline"
+							type="Transparent"
+							press="oCompareClosePress"
+							tooltip="Close"/>
+				</contentRight>
+			</Bar>
+		</customHeader>
+
+		<HBox justifyContent="SpaceAround" alignItems="Start" class="sapUiSmallMarginTop sapUiSmallMarginBottom">
+			<VBox class="sapUiSmallMargin">
+				<Label text="Base UI5 Version" />
+				<Input id="baseImgInput"
+					   enabled="false"
+					   valueHelpRequest="onBaseImgValueHelp"
+					   width="290px"/>
+			</VBox>
+			<VBox class="sapUiSmallMargin">
+				<Label text="Test UI5 Version" labelFor="testImgInput"/>
+				<Input id="testImgInput"
+					   showValueHelp="true"
+					   valueHelpRequest="onTestImgValueHelp"
+					   width="290px" />
+			</VBox>
+		</HBox>
+
+		<VBox id="compareTableContainer" visible="false" class="sapUiSmallMarginTop">
+			<Table id="compareTable1"
+				   inset="false"
+				   items="{comparisonModel>/tableData}"
+				   class="sapUiResponsiveMargin"
+				   width="100%"
+				   growing="true"
+				   growingScrollToLoad="true">
+
+				<columns>
+					<Column><Text text="UI5 Version1"/></Column>
+					<Column><Text text="UI5 Version2"/></Column>
+					<Column><Text text="Executed On"/></Column>
+					<Column><Text text="Status"/></Column>
+				</columns>
+
+				<items>
+					<ColumnListItem>
+						<cells>
+							<Text text="{comparisonModel>ui5Verison1}"/>
+							<Text text="{comparisonModel>ui5Version2}"/>
+							<Text text="{comparisonModel>executedOn}"/>
+							<Text text="{comparisonModel>status}"/>
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</VBox>
+
+		<beginButton>
+			<Button text="Compare" id="oCompareUI5VersionBtn" enabled="false" type="Emphasized" press="onCompareSubmit"/>
+		</beginButton>
+
+		<endButton>
+			<Button text="More" id="oCompareUI5VerdsionBtn" press="onMoreLinkPress"/>
+		</endButton>
+
+	</Dialog>
+</core:FragmentDefinition>

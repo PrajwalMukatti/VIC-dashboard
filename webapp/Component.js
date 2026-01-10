@@ -1,57 +1,50 @@
+/**
+ * eslint-disable @sap/ui5-jsdocs/no-jsdoc
+ */
+
 sap.ui.define([
-    "sap/ui/core/UIComponent",
-    "sap/ui/Device",
-    "sap/vic/dashboard/model/models",
-    "sap/ui/model/json/JSONModel",
-    "sap/m/MessageToast"
-], function (UIComponent, Device, models, JSONModel, MessageToast) {
-    "use strict";
+        "sap/ui/core/UIComponent",
+        "sap/ui/Device",
+        "vicstartintegration/model/models",
+        "sap/ui/model/odata/v2/ODataModel"
+    ],
+    function (UIComponent, Device, models, ODataModel) {
+        "use strict";
 
-    return UIComponent.extend("sap.vic.dashboard.Component", {
+        return UIComponent.extend("vicstartintegration.Component", {
+            metadata: {
+                manifest: "json"
+            },
 
-        metadata: {
-            manifest: "json"
-        },
+            /**
+             * The component is initialized by UI5 automatically during the startup of the app and calls the init method once.
+             * @public
+             * @override
+             */
+            init: function () {
+                // call the base component's init function
+                UIComponent.prototype.init.apply(this, arguments);
 
-        init: function () {
-            // call the base component's init function
-            UIComponent.prototype.init.apply(this, arguments);
+                // enable routing
+                this.getRouter().initialize();
 
-            // enable routing
-            this.getRouter().initialize();
+                //  // create and set the StartSrvModel
+                var oModel = this.getModel("StartSrvModel");
+                if (!oModel) {
+                    oModel = new ODataModel(this.getManifestEntry("/sap.app/dataSources/START_SRV").uri);
+                    this.setModel(oModel, "StartSrvModel");
+                }
 
-            // set the device model
-            this.setModel(models.createDeviceModel(), "device");
-
-            // global app state
-            var oState = new JSONModel({
-                headerExpanded: true,
-                liveMode: false,
-                forceLive: false
-            });
-            this.setModel(oState, "state");
-
-            // Try to connect to OData service (unnamed default model from manifest)
-            var oODataModel = this.getModel();
-            if (oODataModel && typeof oODataModel.metadataLoaded === "function") {
-                oODataModel.metadataLoaded().then(function () {
-                    // OData reachable: switch app to live mode and notify listeners
-                    oState.setProperty("/liveMode", true);
-                    try {
-                        MessageToast.show("OData service connected — Live mode");
-                    } catch (e) { /* ignore in tests */ }
-                    this.getEventBus().publish("vic", "odataAvailable");
-                }.bind(this)).catch(function () {
-                    // If developer forces live, enable even if metadata fails
-                    if (oState.getProperty("/forceLive")) {
-                        oState.setProperty("/liveMode", true);
-                        try { MessageToast.show("Force-live enabled (developer)"); } catch (e) { /* ignore */ }
-                        this.getEventBus().publish("vic", "odataAvailable");
-                    }
-                    // otherwise remain in mock mode
-                }.bind(this));
+                // create and set the STARTPROCESSLOG_SRV model
+            var oModel = this.getModel("STARTPROCESSLOG_SRV");
+            if (!oModel) {
+                oModel = new ODataModel(this.getManifestEntry("/sap.app/dataSources/STARTPROCESSLOG_SRV").uri);
+                this.setModel(oModel, "STARTPROCESSLOG_SRV");
             }
-        }
 
-    });
-});
+                // set the device model
+                this.setModel(models.createDeviceModel(), "device");
+            }
+        });
+    }
+);

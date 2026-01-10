@@ -1,0 +1,16 @@
+<mvc:View
+	controllerName="vicstartintegration.controller.NotFound"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc">
+  
+  <MessagePage title="{i18n>notFoundTitle}" 
+               text="{i18n>notFoundText}"
+               icon="sap-icon://documents"
+               id="Page"
+               description="Check the filter settings.">
+    <customDescription>
+      	<Link id="link" text="{i18n>backToWorklist}" press=".onLinkPressed"/>
+    </customDescription>
+  </MessagePage>
+  
+</mvc:View>

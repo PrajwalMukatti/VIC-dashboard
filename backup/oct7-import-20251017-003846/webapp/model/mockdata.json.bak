@@ -1,0 +1,61 @@
+{
+  "TestTypes": [
+    { "text": "Cycle" },
+    { "text": "Regression" },
+    { "text": "Smoke" }
+  ],
+  "TestPlans": [
+    { "id": "TP1", "name": "Cycle Plan 1", "testType": "Cycle", "productArea": "Logistics" },
+    { "id": "TP2", "name": "Cycle Plan 2", "testType": "Cycle", "productArea": "Finance" },
+    { "id": "TP3", "name": "Regression Plan 1", "testType": "Regression", "productArea": "Human Resources" },
+    { "id": "TP4", "name": "Regression Plan 2", "testType": "Regression", "productArea": "Sales" },
+    { "id": "TP5", "name": "Smoke Plan 1", "testType": "Smoke", "productArea": "Marketing" }
+  ],
+  "ChartData": [
+    {
+      "ProductArea": "Logistics",
+      "TestPlan": "Cycle Plan 1",
+      "TestPlanId": "TP1",
+      "Sim100": 150,
+      "Sim99": 80,
+      "SimLess": 30
+    },
+    {
+      "ProductArea": "Finance",
+      "TestPlan": "Cycle Plan 2",
+      "TestPlanId": "TP2",
+      "Sim100": 220,
+      "Sim99": 120,
+      "SimLess": 50
+    },
+    {
+      "ProductArea": "Human Resources",
+      "TestPlan": "Regression Plan 1",
+      "TestPlanId": "TP3",
+      "Sim100": 180,
+      "Sim99": 90,
+      "SimLess": 20
+    },
+    {
+      "ProductArea": "Sales",
+      "TestPlan": "Regression Plan 2",
+      "TestPlanId": "TP4",
+      "Sim100": 300,
+      "Sim99": 150,
+      "SimLess": 75
+    },
+    {
+      "ProductArea": "Marketing",
+      "TestPlan": "Smoke Plan 1",
+      "TestPlanId": "TP5",
+      "Sim100": 120,
+      "Sim99": 60,
+      "SimLess": 15
+    }
+  ],
+  "PieChartData": [
+    { "Status": "Sim100", "Count": 970 },
+    { "Status": "Sim99", "Count": 500 },
+    { "Status": "SimLess", "Count": 190 }
+  ]
+}

@@ -1,53 +1,191 @@
-/* VIC Dashboard custom styles */
+/* Enter your custom styles here */
+.redtile{
 
-/* Make ShellBar title larger and bolder */
-.vicShellBar .sapFShellBarTitle,
-.vicShellBar .sapFShellBar-title {
-  font-size: 2.4rem !important; /* double size */
-  font-weight: 800 !important;
-  line-height: 1.2 !important;
-  letter-spacing: 0.2px;
+    height: 60px !important;
+    margin: 3px !important;
+
+}
+.fourthTile{
+    background-color: rgba(0, 128, 0, 0.703);
+    height: 60px !important;
+    margin: 3px !important;
+    text-align: center;
+    line-height: normal; /* Reset line height */
+    display: flex; /* Enable flexbox for easy centering */
+    flex-direction: column; /* Stack the count and percent vertically */
+    justify-content: center; /* Center vertically */
+    align-items: center; /* Center horizontally */
+
+
+}
+.fourthTile:hover{
+    background-color: rgba(0, 128, 0, 0.703)  !important;
+}
+.comboboxtext{
+    margin: 7px;
+}
+.ThirdTile{
+    background-color:rgba(83, 155, 83, 0.692);
+    height: 60px !important;
+    margin: 3px !important;
+    text-align: center;
+    line-height: normal; /* Reset line height */
+    display: flex; /* Enable flexbox for easy centering */
+    flex-direction: column; /* Stack the count and percent vertically */
+    justify-content: center; /* Center vertically */
+    align-items: center; /* Center horizontally */
+}
+.ThirdTile:hover{
+    background-color:rgba(83, 155, 83, 0.692) !important;
+}
+.SecondTile{
+    background-color: rgba(255, 166, 0, 0.717);
+    height: 60px !important;
+    margin: 3px !important;
+    text-align: center;
+    line-height: normal; /* Reset line height */
+    display: flex; /* Enable flexbox for easy centering */
+    flex-direction: column; /* Stack the count and percent vertically */
+    justify-content: center; /* Center vertically */
+    align-items: center; /* Center horizontally */
+
+}
+.SecondTile:hover{
+    background-color: rgba(255, 166, 0, 0.717) !important;
+
+}
+.RedTile{
+    background-color: rgba(255, 0, 0, 0.728);
+    height: 60px !important;
+    margin: 3px !important;
+    text-align: center;
+    line-height: normal; /* Reset line height */
+    display: flex; /* Enable flexbox for easy centering */
+    flex-direction: column; /* Stack the count and percent vertically */
+    justify-content: center; /* Center vertically */
+    align-items: center; /* Center horizontally */
+
+}
+.RedTile:hover{
+    background-color: rgba(255, 0, 0, 0.728) !important;
 }
 
-/* Center the ShellBar SearchField and make it responsive */
-.vicSearchWrap {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex: 1 1 auto;
+.genericvbox{
+   position: relative;
+   margin-top: 5px;
+}
+.showallscreenshotbtn{
+    position: relative;
+    top: 5px;
+    left: 50px;
+    margin-bottom: -50px;
+}
+.resetbtn{
+   position: relative;
+   left: 50px;
+   top: 20px;
+}
+.linkclass{
+   position: relative;
+   left: 50px;
+   top: -12px;
+}
+.overviewtitle{
+   position: relative;
+   left: 50px;
 }
 
-.vicSearchWrap .sapMSF {
-  width: 40%;
-  min-width: 280px;
-  max-width: 720px;
+.logversion{
+    
+    margin-top: 10px;
+    margin-right: 2px;
+  
+}
+.inputbasevalue{
+    position: relative;
+    left: 110px;
+    
+}
+.input2versionvalue{
+    position: relative;
+    top: 10px;
+    left: 110px;
+}
+.basetitle{
+    position: relative;
+    left: 29px;
+}
+.versiontitle{
+    position: relative;
+    left: 275px;
+    top: -22px;
 }
 
-/* Optional: tweak ShellBar spacing a bit */
-.vicShellBar .sapFShellBar {
-  padding-inline: 0.5rem;
+.togglebtntest{
+    position: relative;
+    top: -415px;
+    left: 95%;
 }
 
-/* Stronger selector to ensure title size takes effect across themes */
-.vicShellBar .sapFShellBar .sapFShellBarTitle,
-.vicShellBar .sapFShellBar .sapMTitle,
-.vicShellBar .sapFShellBar-title {
-  font-size: 2.4rem !important;
-  font-weight: 800 !important;
-  line-height: 1.2 !important;
+.sapMOH {
+    padding: 3rem;
+    padding-bottom: 1rem;
+    padding-top: 1rem;
+}
+.HeaderClass {
+  
+     font-size: medium !important;
+     font-weight: bold !important;
+}
+.tilesalign{
+    position: relative;
+    left: 100px;
+    top: 10px;
+}
+.logclass{
+    position: relative;
+    left: 40px;
+}
+ 
+.log3versionvalue{
+    position: relative;
+    top: -30px;  
+    left: 125px;
+}
+.similarityclass{
+    position: relative;
+    left: 90px;
+}
+.similarityclass1{
+    position: relative;
+    left: 170px;
+}
+.showallscreenshotbtn{
+    position: relative;
+    top: 80px;
+    left: -230px;
+    margin-bottom: -8px;
+}
+.tilesHbox{
+    position: relative;
+    top: 5px;
+}
+.tilesHbox1{
+    position: relative;
+    top: 5px;
+}
+.oBaseImg{
+    position: relative;
+    top: 20px;
+}
+.chart-count-link {
+  color: blue !important;
+  text-decoration: underline !important;
+  font-weight: bold;
+  cursor: pointer;
 }
 
-/* Goodbye view styles: full-screen centered bold message */
-.goodbyeContainer {
-  min-height: calc(100vh - 0px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
 
-.goodbyeMessage {
-  font-size: 3rem;
-  font-weight: 900;
-  text-align: center;
-}
+  
+
+/*}*/

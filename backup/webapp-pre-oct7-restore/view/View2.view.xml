@@ -1,0 +1,138 @@
+<mvc:View async="true" xmlns:uxap="sap.uxap" controllerName="vicstartintegration.controller.View2" xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m"
+	xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout" xmlns:form="sap.ui.layout.form" xmlns:fb="sap.ui.comp.filterbar"
+	xmlns:app="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1" xmlns:smartFilterBar="sap.ui.comp.smartfilterbar"
+	displayBlock="true" xmlns:tnt="sap.tnt" xmlns:w="sap.ui.integration.widgets" xmlns:f="sap.f" xmlns:card="sap.f.cards">
+	<Page id="page2" showHeader="false" title="" showFooter="true" showNavButton="false" enableScrolling="true" class="sapUiSizeCompact">
+		<content>
+			<HBox justifyContent="SpaceAround">
+				
+				<f:Card class="sapUiMediumMargin" width="510px" height="220px">
+					<f:header>
+						<card:Header/>
+					</f:header>
+					<f:content>
+						<VBox>
+							<Title text="Test Plan Details" class="similarityclass1"></Title>
+							<l:VerticalLayout>
+								<ObjectHeader>
+									<ObjectAttribute id="idTxtTestPlanName"/>
+									<ObjectAttribute id="idTxtProdArea" title="Product Area"/>
+									<ObjectAttribute id="idExecDate" title="Compared On"/>
+								</ObjectHeader>
+							</l:VerticalLayout>
+							
+							<HBox class='linkclass'>
+							
+								<core:Icon src="sap-icon://information" size="0.8rem" color="Marker"/>
+								<Link text="Details" press="onMessageInformationDialogPress"/>
+							</HBox>
+						
+						</VBox>
+					</f:content>
+				</f:Card>
+
+				<f:Card class="sapUiMediumMargin" width="510px" height="220px">
+					<f:header></f:header>
+					<f:content>
+						<VBox>
+							<VBox class="tilesalign">
+								<Title text="Similarity Overview" class="similarityclass"></Title>
+								<HBox width="100%" class="tilesHbox">
+									<GenericTile header="{i18n>hundred}" class="fourthTile" width="150px" id="fourthTile" press="onFourthTilePress" frameType="OneByHalf">
+										<TileContent>
+											<Text text="{i18n>hundred}" id="greaterthan99Id" class="myTile4"></Text>
+										</TileContent>
+									</GenericTile>
+									<GenericTile header="{i18n>greaterthan95}" class="SecondTile" width="150px" id="ThirdTile" press="onThirdTilePress" frameType="OneByHalf">
+										<TileContent>
+											<Text text="{i18n>greaterthan95}" id="greaterthan95Id" class="myTile3"></Text>
+										</TileContent>
+									</GenericTile>
+								</HBox>
+								<HBox width="100%" class="tilesHbox1">
+									<GenericTile header="{i18n>greaterthan90}" class="SecondTile" width="150px" id="SecondTile" press="onSecondTilePress" frameType="OneByHalf">
+										<TileContent>
+											<Text text="{i18n>greaterthan90}" id="greaterthan90Id" class="myTile2"></Text>
+										</TileContent>
+									</GenericTile>
+									<GenericTile header="{i18n>lessthan96}" width="150px" class="RedTile" id="firstTile" press="onFirstTilePress" frameType="OneByHalf">
+										<TileContent>
+											<Text id="lessthan90Id"></Text>
+										</TileContent>
+									</GenericTile>
+									<Button text="Show All Test Cases" class="showallscreenshotbtn" width="170px" type="Default" press="onShowAllData"/>
+								</HBox>
+							</VBox>
+						</VBox>
+					</f:content>
+				</f:Card>
+			</HBox>
+			<Table id="table0" width="100%" showSeparators="All" growing="true" growingThreshold="20" growingScrollToLoad="true"
+				alternateRowColors="true" sticky="HeaderToolbar,InfoToolbar,ColumnHeaders" items="{ path: 'msimilarity>/', templateShareable: false }"
+				enableBusyIndicator="true" updateFinished="onTblUpdateFinished">
+				<headerToolbar>
+					<OverflowToolbar width="auto" height="auto" design="Solid" visible="true" enabled="true">
+						<content>
+							<Title id="tableTitle" text="Test Cases()" titleStyle="Auto" width="auto" textAlign="Begin" visible="true" wrapping="false"/>
+							<ToolbarSpacer width=""/>
+							<SearchField id="idStatusSearch" width="auto" placeholder="Search" showSearchButton="true" search="onSearchButton"/>
+							<OverflowToolbarButton id="onSorting" text="Sort" type="Transparent" icon="sap-icon://sort" iconFirst="true" width="auto" enabled="true" visible="true"
+								tooltip="Sort" iconDensityAware="false" press="handleSortButtonPressed"/>
+							<OverflowToolbarButton id="editButton" text="editButton" type="Transparent" icon="sap-icon://edit" iconFirst="true" width="auto"
+								enabled="true" visible="true" tooltip="Edit" iconDensityAware="false" press="onEdit"/>
+							<OverflowToolbarButton id="onExportTable" text="Action" type="Transparent" icon="sap-icon://excel-attachment" iconFirst="true" width="auto" enabled="true"
+								visible="true" tooltip="Export to Excel" iconDensityAware="false" press="onExport"/>
+							</content>
+					</OverflowToolbar>
+				</headerToolbar>
+				<columns>
+					
+					<Column width="auto" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+						<Text text="{i18n>testcasename}" wrapping="true"/>
+					</Column>
+					<Column width="auto" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+						<Text text="{i18n>executionDate}" wrapping="true"/>
+					</Column>
+					<Column width="auto" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+						<Text text="{i18n>percentage}" wrapping="true"/>
+					</Column>
+					<Column id='vicstatus' width="auto" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+						<Text text="{i18n>vicstatus}" wrapping="true"/>
+					</Column>
+					<Column id="idColRemarksW" width="auto" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+						<header>
+						<Text text="Remarks" width="auto" wrapping="true" textAlign="Begin" textDirection="LTR" visible="true"/>
+						</header>
+					</Column>
+					<Column width="auto" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+						<Text text="{i18n>link}" wrapping="true"/>
+					</Column>
+				</columns>
+				<items>
+					<ColumnListItem>
+					                      
+						<Text text="{msimilarity>testCaseName}"/>
+						<Text text="{msimilarity>executeOn}"/>
+						<Text text="{path: 'msimilarity>percentSuccess', formatter: '.formatPercent'}"/>
+						<tnt:InfoLabel id='idTxtStatus' text="{path: 'msimilarity>vicStatus'}"
+							icon="{path: 'msimilarity>vicStatus', formatter: '.formatter.statusIndicator'}"
+							colorScheme="{path: 'msimilarity>vicStatus', formatter: '.formatter.formatStatus'}"/>
+						<ObjectStatus text="" icon="sap-icon://notes" active="true"
+							state="{path :'msimilarity>comment',formatter:'vicstartintegration.util.ColorFormatter.getColor'}" press="onRemarksPress"/>
+						<Button text="Link" press="onLinkPress" enabled="true"/>
+					</ColumnListItem>
+				</items>
+			</Table>
+		</content>
+		<footer>
+			<OverflowToolbar id="footerbar" width="100%" height="46px" design="Auto" enabled="true" visible="false">
+				<content>
+					<ToolbarSpacer width=""/>
+					<Button id="save" text="Save" type="Emphasized" icon="sap-icon://save" iconFirst="true" width="auto" visible="false"
+						iconDensityAware="false" press="onSave"/>
+					<Button id="cancel" text="Cancel" type="Default" iconFirst="true" width="auto" visible="false" iconDensityAware="false" press="onCancel"/>
+				</content>
+			</OverflowToolbar>
+		</footer>
+	</Page>
+</mvc:View>

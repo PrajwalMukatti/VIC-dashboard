@@ -1,0 +1,19 @@
+[
+  { "testPlanName": "S4PUC_2602_INF_1130X_UOQX_SD",   "percentSuccess": 97.4, "executeOn": "2025-09-20" },
+  { "testPlanName": "S4PUC_2602_INF_1130X_UOQX_FIN",  "percentSuccess": 98.6, "executeOn": "2025-09-21" },
+  { "testPlanName": "S4PUC_2602_INF_1130X_UOQX_MM",   "percentSuccess": 95.0, "executeOn": "2025-09-19" },
+  { "testPlanName": "S4PUC_2602_INF_1131X_UOQX_QM",   "percentSuccess": 99.1, "executeOn": "2025-09-22" },
+  { "testPlanName": "S4PUC_2602_INF_1131X_UOQX_PP",   "percentSuccess": 100.0, "executeOn": "2025-09-18" },
+  { "testPlanName": "S4PUC_2602_INF_1130X_UOQX_HR",   "percentSuccess": 96.2, "executeOn": "2025-09-18" },
+  { "testPlanName": "S4PUC_2602_INF_1131X_UOQX_EAM",  "percentSuccess": 98.2, "executeOn": "2025-09-17" },
+  { "testPlanName": "S4PUC_2602_INF_1131X_UOQX_SERV", "percentSuccess": 97.9, "executeOn": "2025-09-16" },
+
+  { "testPlanName": "S4PUC_2508_INF_1128X_UOQX_SD",   "percentSuccess": 94.2, "executeOn": "2025-08-28" },
+  { "testPlanName": "S4PUC_2508_INF_1129X_UOQX_FIN",  "percentSuccess": 96.7, "executeOn": "2025-08-27" },
+  { "testPlanName": "S4PUC_2508_INF_1129X_UOQX_MM",   "percentSuccess": 93.8, "executeOn": "2025-08-26" },
+  { "testPlanName": "S4PUC_2508_INF_1128X_UOQX_QM",   "percentSuccess": 97.3, "executeOn": "2025-08-25" },
+  { "testPlanName": "S4PUC_2508_INF_1129X_UOQX_PP",   "percentSuccess": 98.9, "executeOn": "2025-08-24" },
+  { "testPlanName": "S4PUC_2508_INF_1128X_UOQX_EAM",  "percentSuccess": 97.6, "executeOn": "2025-08-23" },
+  { "testPlanName": "S4PUC_2508_INF_1129X_UOQX_SERV", "percentSuccess": 95.1, "executeOn": "2025-08-22" },
+  { "testPlanName": "S4PUC_2508_INF_1128X_UOQX_HR",   "percentSuccess": 92.7, "executeOn": "2025-08-21" }
+]

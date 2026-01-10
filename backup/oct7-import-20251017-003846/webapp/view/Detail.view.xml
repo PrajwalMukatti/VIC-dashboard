@@ -1,0 +1,39 @@
+<mvc:View
+  controllerName="sap.vic.dashboard.controller.Detail"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m">
+  <Page id="detailPage" title="Test Plan Detail">
+    <headerContent>
+      <Button icon="sap-icon://nav-back" press="onNavBack" tooltip="Back"/>
+    </headerContent>
+    <content>
+      <VBox class="sapUiSmallMargin">
+        <ObjectHeader
+          title="Test Plan"
+          number="{detail>/id}"
+          numberUnit="ID"
+          intro="{detail>/TestPlan}" />
+        <Toolbar class="sapUiSmallMarginTopBottom">
+          <Title level="H5" text="Overview"/>
+        </Toolbar>
+        <HBox class="sapUiSmallMarginBottom">
+          <Label width="12rem" text="Product Area"/>
+          <Text text="{detail>/ProductArea}"/>
+        </HBox>
+        <HBox class="sapUiSmallMarginBottom">
+          <Label width="12rem" text="Sim 100"/>
+          <ObjectNumber number="{detail>/Sim100}"/>
+        </HBox>
+        <HBox class="sapUiSmallMarginBottom">
+          <Label width="12rem" text="Sim 99"/>
+          <ObjectNumber number="{detail>/Sim99}"/>
+        </HBox>
+        <HBox class="sapUiSmallMarginBottom">
+          <Label width="12rem" text="Sim Less"/>
+          <ObjectNumber number="{detail>/SimLess}"/>
+        </HBox>
+        <MessageStrip text="This is a placeholder detail page. Hook it to FLP cross-app navigation later if needed." type="Information" showIcon="true"/>
+      </VBox>
+    </content>
+  </Page>
+</mvc:View>

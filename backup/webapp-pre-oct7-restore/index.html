@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vicstart_integration</title>
+  <style>
+    html, body, #content {
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+
+  <!-- Static UI5 bootstrap via local proxy. Explicit libs loaded. -->
+  <script
+    id="sap-ui-bootstrap"
+    src="https://ui5.sap.com/resources/sap-ui-core.js"
+    data-sap-ui-theme="sap_horizon"
+    data-sap-ui-async="true"
+    data-sap-ui-compatVersion="edge"
+    data-sap-ui-language="en"
+    data-sap-ui-logLevel="INFO"
+    data-sap-ui-libs="sap.m,sap.ui.core,sap.f,sap.ui.comp,sap.ui.table,sap.viz"
+    data-sap-ui-resourceroots='{"vicstartintegration":"./"}'
+    data-sap-ui-oninit="module:sap/ui/core/ComponentSupport">
+  </script>
+</head>
+<body class="sapUiBody sapUiSizeCompact">
+  <div
+    id="content"
+    data-sap-ui-component
+    data-name="vicstartintegration"
+    data-id="container"
+    data-settings='{"id":"vicstartintegration"}'
+    data-handle-validation="true">
+  </div>
+</body>
+</html>

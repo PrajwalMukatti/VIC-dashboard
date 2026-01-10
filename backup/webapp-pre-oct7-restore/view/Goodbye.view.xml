@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mvc:View
+  controllerName="sap.vic.dashboard.controller.Dashboard"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  displayBlock="true">
+  <Page showHeader="false">
+    <content>
+      <VBox class="goodbyeContainer" width="100%">
+        <Text text="thank you for using VIC have a wonderful day" class="goodbyeMessage" />
+      </VBox>
+    </content>
+  </Page>
+</mvc:View>

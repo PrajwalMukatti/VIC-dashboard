@@ -1,0 +1,15 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<ViewSettingsDialog
+		confirm="handleSortDialogConfirm">
+		<sortItems>
+			<ViewSettingsItem text="Test Plan" key="testPlanName"/>
+			<ViewSettingsItem text="Product Area" key="ProductArea" />
+			<ViewSettingsItem text="Test Type" key="TestType" />
+			<ViewSettingsItem text="Compared On" key="executeOn"/>
+			<ViewSettingsItem text="Similarity %" key="percentSuccess" />
+		</sortItems>
+	</ViewSettingsDialog>
+</core:FragmentDefinition>
+

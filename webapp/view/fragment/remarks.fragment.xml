@@ -1,0 +1,20 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:f="sap.ui.layout.form">
+	<Popover title="Remarks" id="idPop" placement="Left" class="sapUiResponsivePadding--header sapUiResponsivePadding--footer" initialFocus="idRemDlgClose"
+		contentWidth="25%" contentHeight="25%">
+		<f:SimpleForm id="idSimple" layout="ResponsiveGridLayout" editable="true" emptySpanL="2" emptySpanM="1">
+			<f:content>
+				<!-- Read-only Text -->
+				<Text id="idTextRemarks" visible="true" wrapping="true" />
+
+				<!-- Editable TextArea -->
+				<TextArea id="idTextareaRemarks" value="" visible="false" rows="4" growing="true" placeholder="Enter remarks here..." />
+			</f:content>
+		</f:SimpleForm>
+		<footer>
+			<OverflowToolbar>
+				<ToolbarSpacer/>
+				<Button id="idRemDlgClose" text="Close" press="onRemarksDlgClose" />
+			</OverflowToolbar>
+		</footer>
+	</Popover>
+</core:FragmentDefinition>

@@ -1,0 +1,21 @@
+{
+	
+	"similaritySet" : [
+		{
+			"Id" : "01",
+			"Description": "<96%"
+		},
+		{
+			"Id" : "02",
+			"Description": "96%-98%"
+		},
+		{
+			"Id" : "03",
+			"Description": "98%-99%"
+		},
+        {
+            "Id" : "04",
+            "Description" : "100%"
+            
+        }
+]}

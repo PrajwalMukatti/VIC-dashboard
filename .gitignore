@@ -1,0 +1,17 @@
+# Ignore external workspaces and large local data
+real-data-space/
+.restorepoints/
+
+# Common Node/UI5 ignores
+node_modules/
+dist/
+coverage/
+.tmp/
+.cache/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

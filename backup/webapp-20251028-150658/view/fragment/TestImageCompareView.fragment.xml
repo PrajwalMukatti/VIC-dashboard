@@ -1,0 +1,57 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+	<Dialog id="testImageDialog"
+			title="Select Test Image"
+			draggable="true"
+			resizable="true"
+			contentWidth="75%"
+			contentHeight="60%">
+
+		<customHeader>
+			<Bar>
+				<contentLeft>
+					<Title text="Test UI5Version"/>
+				</contentLeft>
+				<contentRight>
+					<Button icon="sap-icon://decline"
+							type="Transparent"
+							tooltip="Close"
+							press="onTestImgDialogClose"/>
+				</contentRight>
+			</Bar>
+		</customHeader>
+
+		<Table id="testImageTable"
+			   mode="SingleSelectLeft"
+			   selectionChange="onTestImgSelect"
+			   alternateRowColors="true"
+			   items="{testVersionModel>/items}">
+
+			<columns>
+				<Column width="auto"><Text text="Version"/></Column>
+				<Column width="14%"><Text text="TestPlan Count"/></Column>
+				<Column width="14%"><Text text="TestCase Count"/></Column>
+				<Column width="14%"><Text text="Screenshot Count"/></Column>
+				<Column width="auto"><Text text="Insertion Date"/></Column>
+			</columns>
+
+			<items>
+				<ColumnListItem>
+					<cells>
+            <Text text="{testVersionModel>version}"/>
+						<Text text="{testVersionModel>testPlanCount}"/>
+            <Text text="{testVersionModel>testCaseCount}"/>
+            <Text text="{testVersionModel>screenshotCount}"/>
+            <Text text="{testVersionModel>insertionDate}"/>
+					</cells>
+				</ColumnListItem>
+			</items>
+		</Table>
+ <beginButton>
+			<Button text="Clear" id="oTestVersionClear" enabled="false" type="Transparent" press="onTestImgClearConfirm"/>
+
+ </beginButton>
+		<endButton>
+			<Button text="Select" id="onTestSelect" enabled="false" type="Transparent" press="onTestImgSelectConfirm"/>
+		</endButton>
+	</Dialog>
+</core:FragmentDefinition>

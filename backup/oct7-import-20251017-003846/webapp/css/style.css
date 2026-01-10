@@ -1,0 +1,53 @@
+/* VIC Dashboard custom styles */
+
+/* Make ShellBar title larger and bolder */
+.vicShellBar .sapFShellBarTitle,
+.vicShellBar .sapFShellBar-title {
+  font-size: 2.4rem !important; /* double size */
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.2px;
+}
+
+/* Center the ShellBar SearchField and make it responsive */
+.vicSearchWrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1 1 auto;
+}
+
+.vicSearchWrap .sapMSF {
+  width: 40%;
+  min-width: 280px;
+  max-width: 720px;
+}
+
+/* Optional: tweak ShellBar spacing a bit */
+.vicShellBar .sapFShellBar {
+  padding-inline: 0.5rem;
+}
+
+/* Stronger selector to ensure title size takes effect across themes */
+.vicShellBar .sapFShellBar .sapFShellBarTitle,
+.vicShellBar .sapFShellBar .sapMTitle,
+.vicShellBar .sapFShellBar-title {
+  font-size: 2.4rem !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+/* Goodbye view styles: full-screen centered bold message */
+.goodbyeContainer {
+  min-height: calc(100vh - 0px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.goodbyeMessage {
+  font-size: 3rem;
+  font-weight: 900;
+  text-align: center;
+}
