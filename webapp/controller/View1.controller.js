@@ -74,6 +74,8 @@ sap.ui.define([
                         res.forEach(function (item) {
                             item.TestType = that.getTestType(item.testPlanName);
                             item.ProductArea = that.getProductArea(item.testPlanName);
+                            item.Release = that.parseReleaseFromName(item.testPlanName);
+                            item.UI5Version = that.parseUI5VersionFromName(item.testPlanName);
                             that.testPlan2Map.set(item.testPlanName, item);
                         });
 
@@ -81,16 +83,20 @@ sap.ui.define([
 
                         that.byId("idTblTitle").setText("Test Plans (" + res.length + ")");
 
-                        var aTestPlan = [], aProdArea = [], aTesScp = [];
-                        var aTempTestPlan = [], aTempProdArea = [], aTempTesScp = [];
+                        var aTestPlan = [], aProdArea = [], aTesScp = [], aRelease = [], aUI5Version = [];
+                        var aTempTestPlan = [], aTempProdArea = [], aTempTesScp = [], aTempRelease = [], aTempUI5Version = [];
                         res.forEach(function (r) {
                             if (aTempTestPlan.indexOf(r.testPlanName) === -1) { aTempTestPlan.push(r.testPlanName); aTestPlan.push(r); }
                             if (r.ProductArea && aTempProdArea.indexOf(r.ProductArea) === -1) { aTempProdArea.push(r.ProductArea); aProdArea.push(r); }
                             if (aTempTesScp.indexOf(r.TestType) === -1) { aTempTesScp.push(r.TestType); aTesScp.push(r); }
+                            if (r.Release && aTempRelease.indexOf(r.Release) === -1) { aTempRelease.push(r.Release); aRelease.push({ Release: r.Release }); }
+                            if (r.UI5Version && aTempUI5Version.indexOf(r.UI5Version) === -1) { aTempUI5Version.push(r.UI5Version); aUI5Version.push({ UI5Version: r.UI5Version }); }
                         });
                         that.getView().setModel(new JSONModel(aTestPlan), "mTestPlan");
                         that.getView().setModel(new JSONModel(aProdArea), "mProdArea");
                         that.getView().setModel(new JSONModel(aTesScp), "mTesScp");
+                        that.getView().setModel(new JSONModel(aRelease), "mRelease");
+                        that.getView().setModel(new JSONModel(aUI5Version), "mUI5Version");
 
                         var chartData = that._transformToChartData(res);
                         var oChartModel = that.getView().getModel("mock");
@@ -328,7 +334,7 @@ sap.ui.define([
             getProductArea: function (testPlanName) {
                 const salesKeywords = ["SALES"];
                 const finKeywords = ["FIN_AA", "FIN_AFC", "FIN_COPA", "FIN_CONSL", "FIN_AP", "FIN_AR", "FIN_CM", "FIN_TRM", "FIN_EBRR", "FIN_TAXES", "FIN_AccGL"];
-                const ideaKeywords = ["S4CLD_EHS", "PROD_CENT_PLM", "EPPM_FINLED_EPPM"];
+                const ideaKeywords = ["S4CLD_E", "PROD_CENT_PLM", "EPPM_FINLED_EPPM"];
                 const procureKeywords = ["PROCURE", "VC_MMIM"];
                 const servicesKeywords = ["S4CLD_SERV"];
                 const produceKeyword = ["OPR_MFG_EAM"];
@@ -361,6 +367,25 @@ sap.ui.define([
                 } else {
                     return "UNKNOWN"; 
                 }
+            },
+
+            parseReleaseFromName: function (name) {
+                if (!name) { return null; }
+                var m = name.match(/(?:^|[^0-9])(26\d{2})(?!\d)/);
+                return m && m[1] ? m[1] : null;
+            },
+
+            parseUI5VersionFromName: function (name) {
+                if (!name) { return null; }
+                var m = name.match(/\b(\d{4}X)\b/);
+                if (m && m[1]) { return m[1]; }
+                var m2 = name.match(/\b1\.(\d{3})\b/);
+                if (m2 && m2[1]) {
+                    var minor = parseInt(m2[1], 10);
+                    var val = 1000 + minor;
+                    return String(val) + "X";
+                }
+                return null;
             },
 
 
@@ -522,19 +547,31 @@ sap.ui.define([
                 }
 
                 aOrFilter = [];
-                var aFilterProdAreaItems = oView.byId("idMCBoxProdArea").getSelectedItems();
-                if (aFilterProdAreaItems && aFilterProdAreaItems.length > 0) {
-                    for (var i = 0; i < aFilterProdAreaItems.length; i++) {
-                        aOrFilter.push(new Filter("ProductArea", FilterOperator.Contains, aFilterProdAreaItems[i].getProperty("key")));
-                    }
-                    aAndFilter.push(new Filter(aOrFilter, false));
-                }
-
-                aOrFilter = [];
                 var aFilterTestScpItems = oView.byId("idMCBoxTestScope").getSelectedItems();
                 if (aFilterTestScpItems && aFilterTestScpItems.length > 0) {
                     for (var i = 0; i < aFilterTestScpItems.length; i++) {
                         aOrFilter.push(new Filter("TestType", FilterOperator.Contains, aFilterTestScpItems[i].getProperty("key")));
+                    }
+                    aAndFilter.push(new Filter(aOrFilter, false));
+                }
+
+
+                // Release filter (OR within dropdown, AND with others)
+                aOrFilter = [];
+                var aFilterReleaseItems = oView.byId("idMCBoxRelease").getSelectedItems();
+                if (aFilterReleaseItems && aFilterReleaseItems.length > 0) {
+                    for (var i = 0; i < aFilterReleaseItems.length; i++) {
+                        aOrFilter.push(new Filter("Release", FilterOperator.EQ, aFilterReleaseItems[i].getProperty("key")));
+                    }
+                    aAndFilter.push(new Filter(aOrFilter, false));
+                }
+
+                // UI5 Version filter (OR within dropdown, AND with others)
+                aOrFilter = [];
+                var aFilterUI5Items = oView.byId("idMCBoxUI5Version").getSelectedItems();
+                if (aFilterUI5Items && aFilterUI5Items.length > 0) {
+                    for (var i = 0; i < aFilterUI5Items.length; i++) {
+                        aOrFilter.push(new Filter("UI5Version", FilterOperator.EQ, aFilterUI5Items[i].getProperty("key")));
                     }
                     aAndFilter.push(new Filter(aOrFilter, false));
                 }
@@ -544,6 +581,76 @@ sap.ui.define([
                 oView.byId('idTblTitle').setText("Test Plans (" + oBinding.getLength() + ")");
 
                 this._updateChartWithFilteredData();
+            },
+
+            onReleaseChange: function (oEvent) {
+                this.onFBGoPress();
+                this._refreshDropdownOptions();
+            },
+
+            onUI5VersionChange: function (oEvent) {
+                this.onFBGoPress();
+                this._refreshDropdownOptions();
+            },
+
+            onTestTypeChange: function (oEvent) {
+                this.onFBGoPress();
+                this._refreshDropdownOptions();
+            },
+
+            onProductAreaChange: function (oEvent) {
+                this.onFBGoPress();
+                this._refreshDropdownOptions();
+            },
+
+            _refreshDropdownOptions: function () {
+                var oView = this.getView();
+                var oTable = oView.byId("idTblTestPlan");
+                var oBinding = oTable && oTable.getBinding("items");
+
+                var aData = [];
+                if (oBinding && oBinding.getContexts) {
+                    aData = oBinding.getContexts().map(function (c) { return c.getObject(); });
+                }
+                if (!aData || aData.length === 0) {
+                    var oOriginalModel = oView.getModel("msimilaritypercent");
+                    aData = oOriginalModel ? oOriginalModel.getData() : [];
+                }
+
+                var mReleaseSet = {};
+                var mUI5Set = {};
+                var mProdAreaSet = {};
+                var mTestTypeSet = {};
+
+                (aData || []).forEach(function (r) {
+                    if (r.Release) { mReleaseSet[r.Release] = true; }
+                    if (r.UI5Version) { mUI5Set[r.UI5Version] = true; }
+                    if (r.ProductArea) { mProdAreaSet[r.ProductArea] = true; }
+                    if (r.TestType) { mTestTypeSet[r.TestType] = true; }
+                });
+
+                var aRelease = Object.keys(mReleaseSet).sort().map(function (x) { return { Release: x }; });
+                var aUI5Version = Object.keys(mUI5Set).sort().map(function (x) { return { UI5Version: x }; });
+                var aProdArea = Object.keys(mProdAreaSet).sort().map(function (x) { return { ProductArea: x }; });
+                var aTesScp = Object.keys(mTestTypeSet).sort().map(function (x) { return { TestType: x }; });
+
+                oView.setModel(new JSONModel(aRelease), "mRelease");
+                oView.setModel(new JSONModel(aUI5Version), "mUI5Version");
+                oView.setModel(new JSONModel(aProdArea), "mProdArea");
+                oView.setModel(new JSONModel(aTesScp), "mTesScp");
+
+                function _intersectSelectedKeys(sControlId, aAvailableKeys) {
+                    var oMCB = oView.byId(sControlId);
+                    if (!oMCB) { return; }
+                    var aKeys = oMCB.getSelectedKeys();
+                    var aNewKeys = (aKeys || []).filter(function (k) { return aAvailableKeys.indexOf(k) !== -1; });
+                    oMCB.setSelectedKeys(aNewKeys);
+                }
+
+                _intersectSelectedKeys("idMCBoxRelease", aRelease.map(function (o) { return o.Release; }));
+                _intersectSelectedKeys("idMCBoxUI5Version", aUI5Version.map(function (o) { return o.UI5Version; }));
+                _intersectSelectedKeys("idMCBoxProdArea", aProdArea.map(function (o) { return o.ProductArea; }));
+                _intersectSelectedKeys("idMCBoxTestScope", aTesScp.map(function (o) { return o.TestType; }));
             },
 
             _updateChartWithFilteredData: function () {
@@ -601,6 +708,7 @@ sap.ui.define([
                 this.getView().byId('idTblTitle').setText("Test Plans (" + oBinding.getLength() + ")");
 
                 this._resetChartToOriginalData();
+                this._refreshDropdownOptions();
             },
 
             _resetChartToOriginalData: function () {

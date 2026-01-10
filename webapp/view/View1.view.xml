@@ -31,7 +31,7 @@
 		</fb:FilterGroupItem>
 		<fb:FilterGroupItem groupName="__$INTERNAL$" name="G" label="Test Type " visibleInFilterBar="true">
 							<fb:control>
-								<MultiComboBox id="idMCBoxTestScope" width="auto" items="{path :'mTesScp>/' , templateShareable:false}">
+								<MultiComboBox id="idMCBoxTestScope" width="auto" selectionFinish="onTestTypeChange" items="{path :'mTesScp>/' , templateShareable:false}">
 									<items>
 										<core:Item text="{ path:'mTesScp>TestType' }" enabled="true" key="{ path:'mTesScp>TestType' }"/>
 									</items>
@@ -49,9 +49,27 @@
 		</fb:FilterGroupItem>
         <fb:FilterGroupItem id='item3' groupName="__$INTERNAL$" name="E" label="Product Area " visibleInFilterBar="true">
 							<fb:control>
-								<MultiComboBox id="idMCBoxProdArea" width="auto" items="{path :'mProdArea>/' , templateShareable:false}">
+								<MultiComboBox id="idMCBoxProdArea" width="auto" selectionFinish="onProductAreaChange" items="{path :'mProdArea>/' , templateShareable:false}">
 									<items>
-										<core:Item id='coreitem1' text="{ path:'mProdArea>ProductArea' }" enabled="true" key="{ path:'mProdArea>ProductArea' }"/>
+										<core:Item text="{ path:'mProdArea>ProductArea' }" enabled="true" key="{ path:'mProdArea>ProductArea' }"/>
+									</items>
+								</MultiComboBox>
+							</fb:control>
+		</fb:FilterGroupItem>
+		<fb:FilterGroupItem groupName="__$INTERNAL$" name="R" label="Release" visibleInFilterBar="true">
+							<fb:control>
+								<MultiComboBox id="idMCBoxRelease" width="auto" selectionFinish="onReleaseChange" items="{path :'mRelease>/' , templateShareable:false}">
+									<items>
+										<core:Item text="{ path:'mRelease>Release' }" enabled="true" key="{ path:'mRelease>Release' }"/>
+									</items>
+								</MultiComboBox>
+							</fb:control>
+		</fb:FilterGroupItem>
+		<fb:FilterGroupItem groupName="__$INTERNAL$" name="U" label="UI5 Version" visibleInFilterBar="true">
+							<fb:control>
+								<MultiComboBox id="idMCBoxUI5Version" width="auto" selectionFinish="onUI5VersionChange" items="{path :'mUI5Version>/' , templateShareable:false}">
+									<items>
+										<core:Item text="{ path:'mUI5Version>UI5Version' }" enabled="true" key="{ path:'mUI5Version>UI5Version' }"/>
 									</items>
 								</MultiComboBox>
 							</fb:control>
