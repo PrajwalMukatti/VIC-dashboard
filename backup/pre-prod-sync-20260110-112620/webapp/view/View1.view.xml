@@ -1,0 +1,224 @@
+<mvc:View controllerName="vicstartintegration.controller.View1"
+    xmlns:table="sap.ui.table"
+    xmlns:mvc="sap.ui.core.mvc" 
+    xmlns="sap.m" 
+    xmlns:core="sap.ui.core" 
+    xmlns:f="sap.f" 
+    xmlns:layout="sap.ui.layout"
+    xmlns:smartFilterBar="sap.ui.comp.smartfilterbar" 
+    xmlns:fb="sap.ui.comp.filterbar" 
+    xmlns:tnt="sap.tnt"
+    xmlns:viz="sap.viz.ui5.controls"
+    xmlns:viz.data="sap.viz.ui5.data"
+    xmlns:vizFeeds="sap.viz.ui5.controls.common.feeds">
+
+   <Page id="view1Page" class="sapUiSizeCompact">
+      <content>
+         <f:DynamicPage id="page1" class="sapUiSizeCompact">
+
+      <f:header>
+        <f:DynamicPageHeader id='dynamicpage' pinnable="true">
+     <fb:FilterBar id="idFilterBar" showGoOnFB="true" showClearOnFB="true" showRestoreOnFB="false" showFilterConfiguration="true" persistencyKey="myPersKey"
+					search="onFBGoPress" clear="onFBClearPress" reset="onFBResetPress" useToolbar="false">
+    <fb:filterGroupItems>
+					<fb:FilterGroupItem id='item1' groupName="__$INTERNAL$" name="A" label="Search" visibleInFilterBar="true">
+							<fb:control>
+								<SearchField id="idSearchField" placeholder="Search" showSearchButton="true" width="auto" search="onSearchFieldPress"/>
+							</fb:control>
+		</fb:FilterGroupItem>
+        <!-- New filter order: Test Type, Product Area, Release, UI Version, Similarity, Test Plan -->
+        <fb:FilterGroupItem groupName="primary" name="testType" label="Test Type" visibleInFilterBar="true">
+							<fb:control>
+								<MultiComboBox id="testTypeSelect" items="{mock>/TestTypes}" selectedKeys="{mock>/Selections/TestType}" selectionChange="onMultiChange" width="220px">
+									<core:Item key="{mock>key}" text="{mock>text}" />
+								</MultiComboBox>
+							</fb:control>
+		</fb:FilterGroupItem>
+        <fb:FilterGroupItem groupName="primary" name="productArea" label="Product Area" visibleInFilterBar="true">
+							<fb:control>
+								<MultiComboBox id="productAreaSelect" items="{mock>/ProductAreas}" selectedKeys="{mock>/Selections/ProductArea}" selectionChange="onMultiChange" width="220px">
+									<core:Item key="{mock>key}" text="{mock>text}" />
+								</MultiComboBox>
+							</fb:control>
+		</fb:FilterGroupItem>
+        <fb:FilterGroupItem groupName="primary" name="release" label="Release" visibleInFilterBar="true">
+							<fb:control>
+								<MultiComboBox id="releaseSelect" items="{mock>/Releases}" selectedKeys="{mock>/Selections/Release}" selectionChange="onMultiChange" width="160px">
+									<core:Item key="{mock>key}" text="{mock>text}" />
+								</MultiComboBox>
+							</fb:control>
+		</fb:FilterGroupItem>
+        <fb:FilterGroupItem groupName="primary" name="uiVersion" label="UI Version" visibleInFilterBar="true">
+							<fb:control>
+								<MultiComboBox id="uiVersionSelect" items="{mock>/UiVersions}" selectedKeys="{mock>/Selections/UiVersion}" selectionChange="onMultiChange" width="160px">
+									<core:Item key="{mock>key}" text="{mock>text}" />
+								</MultiComboBox>
+							</fb:control>
+		</fb:FilterGroupItem>
+        <fb:FilterGroupItem groupName="primary" name="similarity" label="Similarity" visibleInFilterBar="true">
+							<fb:control>
+								<MultiComboBox id="similaritySelect" selectedKeys="{mock>/Selections/Similarity}" selectionChange="onMultiChange" width="200px">
+									<core:Item key="ALL" text="Select All" />
+									<core:Item key="lt96" text="Less than 96%" />
+									<core:Item key="lt97" text="Less than 97%" />
+									<core:Item key="lt98" text="Less than 98%" />
+									<core:Item key="lt99" text="Less than 99%" />
+								<core:Item key="lt100" text="Less than 100%" />
+								</MultiComboBox>
+							</fb:control>
+		</fb:FilterGroupItem>
+        <fb:FilterGroupItem id='item2' groupName="primary" name="testPlan" label="Test Plan" visibleInFilterBar="true">
+							<fb:control>
+								<MultiComboBox id="testPlanSelect" items="{mock>/TestPlans}" selectedKeys="{mock>/Selections/TestPlan}" selectionChange="onMultiChange" width="260px">
+									<core:Item key="{mock>key}" text="{mock>text}" />
+								</MultiComboBox>
+							</fb:control>
+		</fb:FilterGroupItem>
+    </fb:filterGroupItems>              
+    </fb:FilterBar>
+     </f:DynamicPageHeader>
+      </f:header>
+
+      <f:content>
+         <VBox class="sapUiContentPadding" fitContainer="true">
+
+            <!-- Toolbar with toggle buttons -->
+            <OverflowToolbar>
+               <ToolbarSpacer/>
+               <SegmentedButton id="viewSwitch" selectedKey="{view>/view}" selectionChange="onViewChange">
+                  <items>
+                     <SegmentedButtonItem text="Chart View" key="chart" icon="sap-icon://bar-chart" tooltip="Switch to Chart View"/>
+                     <SegmentedButtonItem text="Table View" key="table" icon="sap-icon://table-view" tooltip="Switch to Table View"/>
+                  </items>
+               </SegmentedButton>
+               <!-- <ToolbarSeparator/>
+               <Label text="Live"/>
+               <Switch state="{state>/liveMode}" change="onToggleLive" />
+               <ToolbarSeparator/> -->
+               <!-- <ToggleButton id="navToggle" text="Chart Click → Navigate" pressed="{state>/chartNavEnabled}" press="onToggleChartNav"/> -->
+            </OverflowToolbar>
+
+<!-- Chart Section -->
+<VBox id="chartBox" visible="{= ${view>/view}==='chart'}" class="sapUiSmallMarginTop">
+   <OverflowToolbar design="Transparent">
+      <content>
+         <Select id="chartModeSelect" selectedKey="{state>/chartMode}" change="onChartModeChange" width="200px" enabled="true">
+            <items>
+               <core:Item key="similarity" text="Similarity"/>
+               <core:Item key="trend" text="Trend (Timeline)"/>
+            </items>
+         </Select>
+         <Select id="chartTypeSelect" selectedKey="{state>/chartType}" change="onChartTypeChange" width="200px" enabled="{= ${state>/chartMode} !== 'trend' }">
+            <items>
+               <core:Item key="pie" text="Pie"/>
+               <core:Item key="donut" text="Donut"/>
+               <core:Item key="column" text="Column"/>
+               <core:Item key="bar" text="Bar"/>
+               <core:Item key="line" text="Line"/>
+               <core:Item key="stacked_column" text="Stacked Column"/>
+               <core:Item key="stacked_bar" text="Stacked Bar"/>
+            </items>
+         </Select>
+         <ToolbarSpacer/>
+         <Button id="downloadSvg" icon="sap-icon://download" tooltip="Download chart (SVG)" press="onExportChartSvg"/>
+         <Button id="zoomOutBtn" icon="sap-icon://zoom-out" tooltip="Zoom Out" press="onChartZoomOut" enabled="{= ${state>/chartMode} !== 'trend' }"/>
+         <Button id="zoomInBtn" icon="sap-icon://zoom-in" tooltip="Zoom In" press="onChartZoomIn" enabled="{= ${state>/chartMode} !== 'trend' }"/>
+         <ToggleButton id="chartFull" text="Full Screen" icon="sap-icon://full-screen" press="onToggleFullScreen"/>
+      </content>
+   </OverflowToolbar>
+   <viz:Popover id="idPopOver"></viz:Popover>
+   <viz:VizFrame id="mainViz"
+                 uiConfig="{applicationSet:'fiori'}"
+                 height="420px"
+                 width="100%"
+                 vizType="{state>/chartType}"
+                 selectData="onChartSelect">
+      <viz:dataset>
+         <viz.data:FlattenedDataset data="{path: 'mock>/ChartData'}">
+            <viz.data:dimensions>
+               <viz.data:DimensionDefinition name="Product Area" value="{mock>ProductArea}" />
+            </viz.data:dimensions>
+            <viz.data:measures>
+               <viz.data:MeasureDefinition name="Sim 100" value="{mock>Sim100}" />
+               <viz.data:MeasureDefinition name="Sim 99" value="{mock>Sim99}" />
+               <viz.data:MeasureDefinition name="Sim Less" value="{mock>SimLess}" />
+            </viz.data:measures>
+         </viz.data:FlattenedDataset>
+      </viz:dataset>
+      <viz:feeds>
+         <vizFeeds:FeedItem uid="valueAxis" type="Measure" values="Sim 100,Sim 99,Sim Less" />
+         <vizFeeds:FeedItem uid="categoryAxis" type="Dimension" values="Product Area" />
+      </viz:feeds>
+   </viz:VizFrame>
+</VBox>
+
+
+            <!-- Table Section -->
+			 <VBox visible="{= ${view>/view}==='table'}" class="sapUiSmallMarginTop">
+             <Table id='idTblTestPlan'  width="auto" showSeparators="All" growing="true" growingThreshold="20" growingScrollToLoad="true"
+				alternateRowColors="true" sticky="HeaderToolbar,InfoToolbar,ColumnHeaders" items="{ path: 'msimilaritypercent>/', templateShareable: false }" enableBusyIndicator="true"
+				updateFinished="onTblUpdateFinished">
+	    <headerToolbar>
+					<OverflowToolbar width="auto" height="auto" design="Transparent">
+						<content>
+							<Title id="idTblTitle" text="Test Plans" titleStyle="Auto" width="auto" textAlign="Begin" wrapping="false"/>
+							<ToolbarSpacer/>
+							<OverflowToolbarButton id="compareBtn" type="Transparent" icon="sap-icon://compare" iconFirst="true" width="auto" tooltip="Compare"
+				iconDensityAware="false" press="oCompareButton"/>
+							<OverflowToolbarButton icon="sap-icon://refresh" type="Transparent" tooltip="{i18n>refreshLogs}" press="onLogsRefresh"/>
+							<OverflowToolbarButton tooltip="Sort" icon="sap-icon://sort" press="handleSortButtonPressed"/>
+							<OverflowToolbarButton type="Transparent" icon="sap-icon://excel-attachment" iconFirst="true" width="auto" tooltip="Export to Excel"
+								iconDensityAware="false" press="onExport"/>
+							<OverflowToolbarButton id='bar6' type="Transparent" icon="sap-icon://action-settings" iconFirst="true" width="auto" tooltip="Settings"
+								iconDensityAware="false" press="onPersoButtonPressed"/>
+								
+						</content>
+					</OverflowToolbar>
+		</headerToolbar>
+		<columns>
+			<Column id="testPlan1" width="auto" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+				<header>
+					<Text text="Test Plan" wrapping="true"/>
+				</header>
+			</Column>
+			<Column id="productArea" width="15%" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+				<header>
+					<Text text="Product Area" wrapping="true"/>
+				</header>
+			</Column>
+			<Column id="testScope" width="10%" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+				<header>
+					<Text text="Test Type" wrapping="true"/>
+				</header>
+			</Column>
+			<Column id="analysedDate" width="15%" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+				<header>
+					<Text text="Compared on" wrapping="true"/>
+				</header>
+			</Column>
+			<Column id="similarity" width="15%" minScreenWidth="Tablet" demandPopin="true" popinDisplay="Inline">
+				<header>
+					<Text text="Similarity %" wrapping="true"/>
+				</header>
+			</Column>
+		</columns>
+		<items>
+			<ColumnListItem type="Navigation" press="onLogRowPress">
+				<cells>
+				    <Text text="{msimilaritypercent>testPlanName}"/>
+					<Text text="{msimilaritypercent>ProductArea}"/>
+					<Text text="{msimilaritypercent>TestType}"/>
+					<Text text="{msimilaritypercent>executeOn}"/>
+					<Text text="{msimilaritypercent>percentSuccess}%"/>
+					
+				</cells>
+			</ColumnListItem>
+		</items>
+        </Table>
+</VBox>
+         </VBox>
+      </f:content>
+   </f:DynamicPage>
+      </content>
+   </Page>
+</mvc:View>

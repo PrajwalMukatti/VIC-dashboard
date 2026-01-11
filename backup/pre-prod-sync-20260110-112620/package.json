@@ -1,0 +1,22 @@
+{
+  "name": "vic-dashboard",
+  "version": "1.0.0",
+  "description": "A SAPUI5 dashboard application.",
+  "main": "index.js",
+  "scripts": {
+    "start": "ui5 serve -o index.html",
+    "build": "ui5 build --all --clean-dest",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "sapui5",
+    "openui5",
+    "dashboard"
+  ],
+  "author": "SAP",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@ui5/cli": "^3.0.0",
+    "ui5-middleware-simpleproxy": "^3.4.3"
+  }
+}

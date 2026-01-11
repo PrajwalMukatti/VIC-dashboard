@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.1] - 2026-01-11 (Patch)
+Type: Patch release
+
+Summary:
+- Adds "Select All" sentinel option to all filter dropdowns (MultiComboBox) so users can select all visible results at once.
+- Sentinel is excluded from actual filter composition and pruning; selecting it expands to all currently visible keys for that control.
+
+Technical changes:
+- webapp/controller/View1.controller.js
+  - Injects sentinel item at the top of lists in _loadData (both success and fallback) for:
+    - Product Area (mProdArea), Release (mRelease), UI5 Version (mUI5Version), Test Plan (mTestPlan), Test Type (mTesScp).
+  - _refreshDropdownOptions():
+    - Prepends sentinel to recomputed lists, maintains upstream-only recompute pipeline, and excludes sentinel during _intersectSelectedKeys pruning.
+  - Event handlers (onProductAreaChange, onReleaseChange, onUI5VersionChange, onTestTypeChange, onTestPlanChange, onSimilatitySelect):
+    - Call _applySelectAllIfRequested to expand sentinel selection to all visible options.
+  - onFBGoPress():
+    - Ignores sentinel in all filter loops (Product Area, Release, UI5 Version, Test Plan, Test Type; Similarity already handled).
+  - Helpers remain:
+    - SELECT_ALL_TEXT constant; _collectVisibleKeysFromMCB; _applySelectAllIfRequested; _ensureSelectInSimilarityModel.
+- Versioning:
+  - package.json: 3.1.0 → 3.1.1
+  - webapp/manifest.json (sap.app.applicationVersion.version): 3.1.0 → 3.1.1
+
+Validation notes:
+- Selecting "Select All" at the beginning of any dropdown selects all visible options for that control.
+- OR semantics within a control and AND across controls are preserved; instant refresh and downstream pruning behavior intact.
+- No downstream→upstream restriction and no dropdown collapse; upstream-only recompute pipeline maintained.
+
+Breaking changes:
+- None.
+
+
 ## [3.1.0] - 2026-01-11 (Stable)
 Type: Stable release
 

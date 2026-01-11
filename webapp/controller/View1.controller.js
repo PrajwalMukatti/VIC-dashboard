@@ -34,6 +34,7 @@ sap.ui.define([
         var ExeDate2 = null;
         var testPlan1Map = new Map();
         var testPlan2Map = new Map();
+        var SELECT_ALL_TEXT = "Select All";
 
         return Controller.extend("vicstartintegration.controller.View1", {
             formatter: formatter,
@@ -55,6 +56,7 @@ sap.ui.define([
                 var oRouter = sap.ui.core.UIComponent.getRouterFor(this);
                 oRouter.getRoute("Route1").attachPatternMatched(this.onRouteMatched, this);
 
+                this._ensureSelectAllInSimilarityModel();
                 this._loadData();
             },
 
@@ -92,6 +94,13 @@ sap.ui.define([
                             if (r.Release && aTempRelease.indexOf(r.Release) === -1) { aTempRelease.push(r.Release); aRelease.push({ Release: r.Release }); }
                             if (r.UI5Version && aTempUI5Version.indexOf(r.UI5Version) === -1) { aTempUI5Version.push(r.UI5Version); aUI5Version.push({ UI5Version: r.UI5Version }); }
                         });
+                        // Prepend "Select All" item at the top for all dropdowns
+                        aProdArea.unshift({ ProductArea: SELECT_ALL_TEXT });
+                        aRelease.unshift({ Release: SELECT_ALL_TEXT });
+                        aUI5Version.unshift({ UI5Version: SELECT_ALL_TEXT });
+                        aTestPlan.unshift({ testPlanName: SELECT_ALL_TEXT });
+                        aTesScp.unshift({ TestType: SELECT_ALL_TEXT });
+
                         that.getView().setModel(new JSONModel(aTestPlan), "mTestPlan");
                         that.getView().setModel(new JSONModel(aProdArea), "mProdArea");
                         that.getView().setModel(new JSONModel(aTesScp), "mTesScp");
@@ -135,6 +144,13 @@ sap.ui.define([
                                 if (r.Release && aTempRelease.indexOf(r.Release) === -1) { aTempRelease.push(r.Release); aRelease.push({ Release: r.Release }); }
                                 if (r.UI5Version && aTempUI5Version.indexOf(r.UI5Version) === -1) { aTempUI5Version.push(r.UI5Version); aUI5Version.push({ UI5Version: r.UI5Version }); }
                             });
+                            // Prepend "Select All" item at the top for all dropdowns
+                            aProdArea.unshift({ ProductArea: SELECT_ALL_TEXT });
+                            aRelease.unshift({ Release: SELECT_ALL_TEXT });
+                            aUI5Version.unshift({ UI5Version: SELECT_ALL_TEXT });
+                            aTestPlan.unshift({ testPlanName: SELECT_ALL_TEXT });
+                            aTesScp.unshift({ TestType: SELECT_ALL_TEXT });
+
                             that.getView().setModel(new JSONModel(aTestPlan), "mTestPlan");
                             that.getView().setModel(new JSONModel(aProdArea), "mProdArea");
                             that.getView().setModel(new JSONModel(aTesScp), "mTesScp");
@@ -321,6 +337,48 @@ sap.ui.define([
                     });
                 }
                 oViz.invalidate();
+            },
+
+            // Select All helpers
+            _ensureSelectAllInSimilarityModel: function () {
+                try {
+                    var oSimModel = this.getView().getModel("mSimilarity");
+                    if (!oSimModel || !oSimModel.getData) { return; }
+                    var data = oSimModel.getData();
+                    if (data && Array.isArray(data.similaritySet)) {
+                        var found = false;
+                        for (var i = 0; i < data.similaritySet.length; i++) {
+                            if (data.similaritySet[i] && data.similaritySet[i].Description === SELECT_ALL_TEXT) {
+                                found = true; break;
+                            }
+                        }
+                        if (!found) {
+                            data.similaritySet.unshift({ Description: SELECT_ALL_TEXT });
+                            oSimModel.refresh(true);
+                        }
+                    }
+                } catch (e) {
+                    // no-op
+                }
+            },
+
+            _collectVisibleKeysFromMCB: function (oMCB) {
+                var aItems = oMCB && oMCB.getItems ? oMCB.getItems() : [];
+                var aKeys = [];
+                for (var i = 0; i < aItems.length; i++) {
+                    var k = aItems[i].getKey && aItems[i].getKey();
+                    if (k && k !== SELECT_ALL_TEXT) { aKeys.push(k); }
+                }
+                return aKeys;
+            },
+
+            _applySelectAllIfRequested: function (oMCB) {
+                if (!oMCB || !oMCB.getSelectedKeys) { return; }
+                var aKeys = oMCB.getSelectedKeys() || [];
+                if (aKeys.indexOf(SELECT_ALL_TEXT) !== -1) {
+                    var aAll = this._collectVisibleKeysFromMCB(oMCB);
+                    oMCB.setSelectedKeys(aAll);
+                }
             },
 
             attachAfterRendering: function () {
@@ -605,6 +663,7 @@ sap.ui.define([
                 var aSelectedSimilarity = oView.byId("idMCBoxsimilarity").getSelectedKeys();
 
                 aSelectedSimilarity.forEach(function (selectedItem) {
+                    if (selectedItem === SELECT_ALL_TEXT) { return; }
                     var sText = selectedItem;
 
                     if (sText.indexOf("<96") === 0 || sText.indexOf("<96") === 0) {
@@ -638,9 +697,13 @@ sap.ui.define([
                     var aFilterTestPlanItems = oMCBTestPlan.getSelectedItems();
                     if (aFilterTestPlanItems && aFilterTestPlanItems.length > 0) {
                         for (var i = 0; i < aFilterTestPlanItems.length; i++) {
-                            aOrFilter.push(new Filter("testPlanName", FilterOperator.Contains, aFilterTestPlanItems[i].getProperty("key")));
+                            var k = aFilterTestPlanItems[i].getProperty("key");
+                            if (k === SELECT_ALL_TEXT) { continue; }
+                            aOrFilter.push(new Filter("testPlanName", FilterOperator.Contains, k));
                         }
-                        aAndFilter.push(new Filter(aOrFilter, false));
+                        if (aOrFilter.length > 0) {
+                            aAndFilter.push(new Filter(aOrFilter, false));
+                        }
                     }
                 }
 
@@ -649,9 +712,13 @@ sap.ui.define([
                 var aFilterTestScpItems = oMCBTestScope ? oMCBTestScope.getSelectedItems() : null;
                 if (aFilterTestScpItems && aFilterTestScpItems.length > 0) {
                     for (var i = 0; i < aFilterTestScpItems.length; i++) {
-                        aOrFilter.push(new Filter("TestType", FilterOperator.Contains, aFilterTestScpItems[i].getProperty("key")));
+                        var k = aFilterTestScpItems[i].getProperty("key");
+                        if (k === SELECT_ALL_TEXT) { continue; }
+                        aOrFilter.push(new Filter("TestType", FilterOperator.Contains, k));
                     }
-                    aAndFilter.push(new Filter(aOrFilter, false));
+                    if (aOrFilter.length > 0) {
+                        aAndFilter.push(new Filter(aOrFilter, false));
+                    }
                 }
 
 
@@ -660,9 +727,13 @@ sap.ui.define([
                 var aFilterProdAreaItems = oView.byId("idMCBoxProdArea").getSelectedItems();
                 if (aFilterProdAreaItems && aFilterProdAreaItems.length > 0) {
                     for (var i = 0; i < aFilterProdAreaItems.length; i++) {
-                        aOrFilter.push(new Filter("ProductArea", FilterOperator.EQ, aFilterProdAreaItems[i].getProperty("key")));
+                        var k = aFilterProdAreaItems[i].getProperty("key");
+                        if (k === SELECT_ALL_TEXT) { continue; }
+                        aOrFilter.push(new Filter("ProductArea", FilterOperator.EQ, k));
                     }
-                    aAndFilter.push(new Filter(aOrFilter, false));
+                    if (aOrFilter.length > 0) {
+                        aAndFilter.push(new Filter(aOrFilter, false));
+                    }
                 }
 
                 // Release filter (OR within dropdown, AND with others)
@@ -670,9 +741,13 @@ sap.ui.define([
                 var aFilterReleaseItems = oView.byId("idMCBoxRelease").getSelectedItems();
                 if (aFilterReleaseItems && aFilterReleaseItems.length > 0) {
                     for (var i = 0; i < aFilterReleaseItems.length; i++) {
-                        aOrFilter.push(new Filter("Release", FilterOperator.EQ, aFilterReleaseItems[i].getProperty("key")));
+                        var k = aFilterReleaseItems[i].getProperty("key");
+                        if (k === SELECT_ALL_TEXT) { continue; }
+                        aOrFilter.push(new Filter("Release", FilterOperator.EQ, k));
                     }
-                    aAndFilter.push(new Filter(aOrFilter, false));
+                    if (aOrFilter.length > 0) {
+                        aAndFilter.push(new Filter(aOrFilter, false));
+                    }
                 }
 
                 // UI5 Version filter (OR within dropdown, AND with others)
@@ -680,11 +755,15 @@ sap.ui.define([
                 var oUI5MCB = oView.byId("idMCBoxUI5Version");
                 if (oUI5MCB) {
                     var aFilterUI5Items = oUI5MCB.getSelectedItems();
-                    if (aFilterUI5Items && aFilterUI5Items.length > 0) {
+                    if (aFilterUI5Items && aFilterUI5Items.length >0) {
                         for (var i = 0; i < aFilterUI5Items.length; i++) {
-                            aOrFilter.push(new Filter("UI5Version", FilterOperator.EQ, aFilterUI5Items[i].getProperty("key")));
+                            var k = aFilterUI5Items[i].getProperty("key");
+                            if (k === SELECT_ALL_TEXT) { continue; }
+                            aOrFilter.push(new Filter("UI5Version", FilterOperator.EQ, k));
                         }
-                        aAndFilter.push(new Filter(aOrFilter, false));
+                        if (aOrFilter.length > 0) {
+                            aAndFilter.push(new Filter(aOrFilter, false));
+                        }
                     }
                 }
 
@@ -697,31 +776,37 @@ sap.ui.define([
             },
 
             onReleaseChange: function (oEvent) {
+                this._applySelectAllIfRequested(oEvent.getSource());
                 this.onFBGoPress();
                 this._refreshDropdownOptions();
             },
 
             onTestPlanChange: function (oEvent) {
+                this._applySelectAllIfRequested(oEvent.getSource());
                 this.onFBGoPress();
                 this._refreshDropdownOptions();
             },
 
             onUI5VersionChange: function (oEvent) {
+                this._applySelectAllIfRequested(oEvent.getSource());
                 this.onFBGoPress();
                 this._refreshDropdownOptions();
             },
 
             onTestTypeChange: function (oEvent) {
+                this._applySelectAllIfRequested(oEvent.getSource());
                 this.onFBGoPress();
                 this._refreshDropdownOptions();
             },
 
             onProductAreaChange: function (oEvent) {
+                this._applySelectAllIfRequested(oEvent.getSource());
                 this.onFBGoPress();
                 this._refreshDropdownOptions();
             },
 
-            onSimilatitySelect: function () {
+            onSimilatitySelect: function (oEvent) {
+                this._applySelectAllIfRequested(oEvent.getSource());
                 this.onFBGoPress();
                 this._refreshDropdownOptions();
             },
@@ -783,6 +868,7 @@ sap.ui.define([
                     if (r.ProductArea) { prodAreaSet[r.ProductArea] = true; }
                 });
                 var aProdArea = Object.keys(prodAreaSet).sort().map(function (x) { return { ProductArea: x }; });
+                aProdArea.unshift({ ProductArea: SELECT_ALL_TEXT });
                 oView.setModel(new JSONModel(aProdArea), "mProdArea");
 
                 // Release options: depends only on selected Product Areas (union)
@@ -794,6 +880,7 @@ sap.ui.define([
                     if (r.Release) { releaseSet[r.Release] = true; }
                 });
                 var aRelease = Object.keys(releaseSet).sort().map(function (x) { return { Release: x }; });
+                aRelease.unshift({ Release: SELECT_ALL_TEXT });
                 oView.setModel(new JSONModel(aRelease), "mRelease");
 
                 // UI5 Version options: depends on Product Areas + Releases (union)
@@ -805,6 +892,7 @@ sap.ui.define([
                     if (r.UI5Version) { ui5Set[r.UI5Version] = true; }
                 });
                 var aUI5Version = Object.keys(ui5Set).sort().map(function (x) { return { UI5Version: x }; });
+                aUI5Version.unshift({ UI5Version: SELECT_ALL_TEXT });
                 oView.setModel(new JSONModel(aUI5Version), "mUI5Version");
 
                 // Available similarity buckets under current upstream filters (PA + Release)
@@ -830,6 +918,7 @@ sap.ui.define([
                     if (r.testPlanName) { testPlanSet[r.testPlanName] = true; }
                 });
                 var aTestPlan = Object.keys(testPlanSet).sort().map(function (x) { return { testPlanName: x }; });
+                aTestPlan.unshift({ testPlanName: SELECT_ALL_TEXT });
                 oView.setModel(new JSONModel(aTestPlan), "mTestPlan");
 
                 // Test Type list (leave available globally; keep minimal impact)
@@ -838,6 +927,7 @@ sap.ui.define([
                     if (r.TestType) { testTypeSet[r.TestType] = true; }
                 });
                 var aTesScp = Object.keys(testTypeSet).sort().map(function (x) { return { TestType: x }; });
+                aTesScp.unshift({ TestType: SELECT_ALL_TEXT });
                 oView.setModel(new JSONModel(aTesScp), "mTesScp");
 
                 // Intersect selected keys against what is now available.
@@ -850,13 +940,13 @@ sap.ui.define([
                 }
 
                 // Keep PA keys valid (list is universe, so this is largely a no-op)
-                _intersectSelectedKeys("idMCBoxProdArea", aProdArea.map(function (o) { return o.ProductArea; }));
+                _intersectSelectedKeys("idMCBoxProdArea", aProdArea.map(function (o) { return o.ProductArea; }).filter(function (k) { return k !== SELECT_ALL_TEXT; }));
 
                 // Prune downstream invalid selections
-                _intersectSelectedKeys("idMCBoxRelease", aRelease.map(function (o) { return o.Release; }));
-                _intersectSelectedKeys("idMCBoxUI5Version", aUI5Version.map(function (o) { return o.UI5Version; }));
-                _intersectSelectedKeys("idMCBoxTestPlan", aTestPlan.map(function (o) { return o.testPlanName; }));
-                _intersectSelectedKeys("idMCBoxTestScope", aTesScp.map(function (o) { return o.TestType; }));
+                _intersectSelectedKeys("idMCBoxRelease", aRelease.map(function (o) { return o.Release; }).filter(function (k) { return k !== SELECT_ALL_TEXT }));
+                _intersectSelectedKeys("idMCBoxUI5Version", aUI5Version.map(function (o) { return o.UI5Version; }).filter(function (k) { return k !== SELECT_ALL_TEXT; }));
+                _intersectSelectedKeys("idMCBoxTestPlan", aTestPlan.map(function (o) { return o.testPlanName; }).filter(function (k) { return k !== SELECT_ALL_TEXT; }));
+                _intersectSelectedKeys("idMCBoxTestScope", aTesScp.map(function (o) { return o.TestType; }).filter(function (k) { return k !== SELECT_ALL_TEXT; }));
 
                 // Prune similarity selections to available buckets under current upstream filters
                 _intersectSelectedKeys("idMCBoxsimilarity", aAvailSimKeys);

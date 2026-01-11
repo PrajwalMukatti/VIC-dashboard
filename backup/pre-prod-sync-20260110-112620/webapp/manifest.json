@@ -1,0 +1,220 @@
+{
+  "_version": "1.48.0",
+  "sap.app": {
+    "id": "vicstartintegration",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": {
+      "version": "0.0.1"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "sourceTemplate": {
+      "id": "@sap/generator-fiori:basic",
+      "version": "1.13.6",
+      "toolsId": "4550f27e-6e9e-426e-917a-13d4f9ad82bd"
+    },
+    "dataSources": {
+      "mainService": {
+        "uri": "/sap/opu/odata/sap/start_srv/",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "localUri": "localService/mainService/metadata.xml",
+          "odataVersion": "2.0"
+        }
+      },
+      "START_SRV": {
+        "uri": "/sap/opu/odata/sap/start_srv",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "localUri": "localService/mainService/metadata.xml",
+          "odataVersion": "2.0"
+        }
+      },
+      "STARTPROCESSLOG_SRV": {
+        "uri": "/sap/opu/odata/sap/STARTPROCESSLOG_SRV",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "localUri": "localService/STARTPROCESSLOG_SRV/metadata.xml",
+          "odataVersion": "2.0"
+        }
+      },
+      "similarity_model": {
+        "uri": "model/similarity.json",
+        "type": "JSON"
+      }
+    },
+    "crossNavigation": {
+      "inbounds": {
+        "VIC-TestPlan-create": {
+          "semanticObject": "VICTestPlan",
+          "action": "create",
+          "title": "{{flpTitle}}",
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    },
+    "supportedThemes": [
+      "sap_hcb",
+      "sap_belize",
+      "sap_quartz_light"
+    ]
+  },
+  "sap.ui5": {
+    "dependencies": {
+      "minUI5Version": "1.108.18",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.f": {},
+        "sap.suite.ui.generic.template": {},
+        "sap.ui.comp": {},
+        "sap.ui.generic.app": {},
+        "sap.ui.table": {},
+        "sap.viz": {}
+      }
+    },
+    "config": {
+      "fullWidth": true,
+      "sapFiori2Adaptation": true
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "vicstartintegration.i18n.i18n"
+        }
+      },
+      "testPlanDetails": {
+        "type": "sap.ui.model.json.JSONModel",
+        "settings": {},
+        "uri": "/EPVP/testPlanDetails",
+        "preload": false
+      },
+      "STARTPROCESSLOG_SRV": {
+        "type": "sap.ui.model.odata.v2.ODataModel",
+        "settings": {
+          "defaultOperationMode": "Server",
+          "defaultBindingMode": "OneWay",
+          "defaultCountMode": "Request"
+        },
+        "dataSource": "STARTPROCESSLOG_SRV",
+        "preload": false
+      },
+      "StartSrvModel": {
+        "type": "sap.ui.model.odata.v2.ODataModel",
+        "settings": {
+          "defaultOperationMode": "Server",
+          "defaultBindingMode": "OneWay",
+          "defaultCountMode": "Request"
+        },
+        "dataSource": "START_SRV",
+        "preload": false
+      },
+      "mSimilarity": {
+        "type": "sap.ui.model.json.JSONModel",
+        "dataSource": "similarity_model"
+      }
+    },
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
+    "routing": {
+      "config": {
+        "routerClass": "sap.m.routing.Router",
+        "viewType": "XML",
+        "async": true,
+        "viewPath": "vicstartintegration.view",
+        "controlAggregation": "pages",
+        "controlId": "app",
+        "clearControlAggregation": false,
+        "bypassed": {
+          "target": [
+            "notFound"
+          ]
+        }
+      },
+      "routes": [
+        {
+          "name": "Route1",
+          "pattern": "",
+          "target": "Target1"
+        },
+        {
+          "name": "Route2",
+          "pattern": "Route2/{testplan}/{productarea}/{executedon}",
+          "target": [
+            "target2"
+          ]
+        }
+      ],
+      "targets": {
+        "Target1": {
+          "viewType": "XML",
+          "transition": "slide",
+          "viewName": "View1",
+          "clearControlAggregation": true
+        },
+        "target2": {
+          "viewType": "XML",
+          "viewName": "View2",
+          "transition": "slide",
+          "clearControlAggregation": true
+        },
+        "objectNotFound": {
+          "viewName": "ObjectNotFound",
+          "viewId": "objectNotFound"
+        },
+        "notFound": {
+          "viewName": "NotFound",
+          "viewId": "notFound"
+        }
+      }
+    },
+    "rootView": {
+      "viewName": "vicstartintegration.view.App",
+      "type": "XML",
+      "async": true,
+      "id": "App"
+    }
+  },
+  "sap.cloud": {
+    "public": true,
+    "service": "vicstartintegration_dev"
+  },
+  "sap.platform.hcp": {
+    "uri": "webapp",
+    "_version": "1.1.0"
+  }
+}

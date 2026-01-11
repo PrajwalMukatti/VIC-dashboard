@@ -1,0 +1,16 @@
+<core:FragmentDefinition
+	xmlns="sap.m"
+	xmlns:core="sap.ui.core">
+	<SelectDialog
+		id="idVHTestPlan"
+		title="Test Plan"
+		items="{mTestPlan>/}"
+		search="TestPlanVHSearch"
+		confirm="TestPlanVHClose"
+		cancel="TestPlanVHClose"
+		multiSelect="true">
+		<StandardListItem
+			title="{mTestPlan>testPlanName}"/>
+	</SelectDialog>
+</core:FragmentDefinition>
+
