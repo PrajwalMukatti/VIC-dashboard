@@ -28,19 +28,24 @@ sap.ui.define([
                 // enable routing
                 this.getRouter().initialize();
 
-                //  // create and set the StartSrvModel
-                var oModel = this.getModel("StartSrvModel");
-                if (!oModel) {
-                    oModel = new ODataModel(this.getManifestEntry("/sap.app/dataSources/START_SRV").uri);
-                    this.setModel(oModel, "StartSrvModel");
+                // create and set the StartSrvModel (skipped in local/test environments)
+                var bSkipOData = (typeof window !== "undefined") && (!!window.QUnit || /localhost|127\.0\.0\.1/i.test(window.location.host));
+                if (!bSkipOData) {
+                    var oStartSrv = this.getModel("StartSrvModel");
+                    if (!oStartSrv) {
+                        oStartSrv = new ODataModel(this.getManifestEntry("/sap.app/dataSources/START_SRV").uri);
+                        this.setModel(oStartSrv, "StartSrvModel");
+                    }
                 }
 
-                // create and set the STARTPROCESSLOG_SRV model
-            var oModel = this.getModel("STARTPROCESSLOG_SRV");
-            if (!oModel) {
-                oModel = new ODataModel(this.getManifestEntry("/sap.app/dataSources/STARTPROCESSLOG_SRV").uri);
-                this.setModel(oModel, "STARTPROCESSLOG_SRV");
-            }
+                // create and set the STARTPROCESSLOG_SRV model (skipped in local/test environments)
+                if (!bSkipOData) {
+                    var oProcLog = this.getModel("STARTPROCESSLOG_SRV");
+                    if (!oProcLog) {
+                        oProcLog = new ODataModel(this.getManifestEntry("/sap.app/dataSources/STARTPROCESSLOG_SRV").uri);
+                        this.setModel(oProcLog, "STARTPROCESSLOG_SRV");
+                    }
+                }
 
                 // set the device model
                 this.setModel(models.createDeviceModel(), "device");

@@ -111,6 +111,52 @@ sap.ui.define([
                         that._applyChartConfig(that.getView().getModel("state").getProperty("/chartType"));
 
                         that.attachAfterRendering();
+                    },
+                    error: function () {
+                        $.getJSON(sap.ui.require.toUrl("vicstartintegration/localService/testplans.json")).done(function (res) {
+                            that.testPlan2Map = new Map();
+                            res.forEach(function (item) {
+                                item.TestType = that.getTestType(item.testPlanName);
+                                item.ProductArea = that.getProductArea(item.testPlanName);
+                                item.Release = that.parseReleaseFromName(item.testPlanName);
+                                item.UI5Version = that.parseUI5VersionFromName(item.testPlanName);
+                                that.testPlan2Map.set(item.testPlanName, item);
+                            });
+
+                            that.getView().setModel(new JSONModel(res), "msimilaritypercent");
+                            that.byId("idTblTitle").setText("Test Plans (" + res.length + ")");
+
+                            var aTestPlan = [], aProdArea = [], aTesScp = [], aRelease = [], aUI5Version = [];
+                            var aTempTestPlan = [], aTempProdArea = [], aTempTesScp = [], aTempRelease = [], aTempUI5Version = [];
+                            res.forEach(function (r) {
+                                if (aTempTestPlan.indexOf(r.testPlanName) === -1) { aTempTestPlan.push(r.testPlanName); aTestPlan.push(r); }
+                                if (r.ProductArea && aTempProdArea.indexOf(r.ProductArea) === -1) { aTempProdArea.push(r.ProductArea); aProdArea.push(r); }
+                                if (aTempTesScp.indexOf(r.TestType) === -1) { aTempTesScp.push(r.TestType); aTesScp.push(r); }
+                                if (r.Release && aTempRelease.indexOf(r.Release) === -1) { aTempRelease.push(r.Release); aRelease.push({ Release: r.Release }); }
+                                if (r.UI5Version && aTempUI5Version.indexOf(r.UI5Version) === -1) { aTempUI5Version.push(r.UI5Version); aUI5Version.push({ UI5Version: r.UI5Version }); }
+                            });
+                            that.getView().setModel(new JSONModel(aTestPlan), "mTestPlan");
+                            that.getView().setModel(new JSONModel(aProdArea), "mProdArea");
+                            that.getView().setModel(new JSONModel(aTesScp), "mTesScp");
+                            that.getView().setModel(new JSONModel(aRelease), "mRelease");
+                            that.getView().setModel(new JSONModel(aUI5Version), "mUI5Version");
+
+                            var chartData = that._transformToChartData(res);
+                            var oChartModel = that.getView().getModel("mock");
+                            if (!oChartModel) {
+                                oChartModel = new JSONModel({ ChartData: chartData });
+                                that.getView().setModel(oChartModel, "mock");
+                            } else {
+                                oChartModel.setProperty("/ChartData", chartData);
+                            }
+
+                            that._updatePieChartData(res);
+                            that._applyChartConfig(that.getView().getModel("state").getProperty("/chartType"));
+
+                            that.attachAfterRendering();
+                        }).fail(function () {
+                            MessageBox.error("Failed to load test plan data from backend and local fallback.");
+                        });
                     }
                 });
             },
@@ -119,6 +165,14 @@ sap.ui.define([
                 var sKey = (oEvent.getParameter("selectedItem") && oEvent.getParameter("selectedItem").getKey()) || oEvent.getSource().getSelectedKey();
                 this.getView().getModel("state").setProperty("/chartType", sKey);
                 this._applyChartConfig(sKey);
+            },
+
+            onViewChange: function (oEvent) {
+                var sKey = (oEvent.getSource && oEvent.getSource().getSelectedKey) ? oEvent.getSource().getSelectedKey() :
+                    (oEvent.getParameter && oEvent.getParameter("selectedItem") ? oEvent.getParameter("selectedItem").getKey() : null);
+                if (sKey) {
+                    this.getView().getModel("view").setProperty("/view", sKey);
+                }
             },
 
             _transformToChartData: function (aRows) {
@@ -276,6 +330,17 @@ sap.ui.define([
                     return;
                 }
 
+                // Ensure viz popover is connected to the current VizFrame
+                var oPopover = this.byId("idPopOver");
+                if (oPopover && !oPopover.__connected) {
+                    try {
+                        oPopover.connect(oViz.getVizUid());
+                        oPopover.__connected = true;
+                    } catch (e) {
+                        // no-op: connect may throw if viz is not ready yet
+                    }
+                }
+
                 if (!oViz.__selectHandlerAttached) {
                     oViz.attachSelectData(this._onChartSelectData.bind(this));
                     oViz.__selectHandlerAttached = true;
@@ -323,12 +388,26 @@ sap.ui.define([
             },
 
             getTestType: function (inputString) {
+                if (!inputString) { return null; }
                 var parts = inputString.split('_');
-                if (parts.length >= 5) {
-                    return parts[4];
-                } else {
-                    return null;
+
+                // Prefer known test type tokens if present
+                var knownTypes = ["E2E", "UNIT", "QA", "SMOKE", "REGRESSION", "UAT", "PERF", "INTEGRATION"];
+                for (var i = 0; i < parts.length; i++) {
+                    if (knownTypes.indexOf(parts[i]) !== -1) {
+                        return parts[i];
+                    }
                 }
+
+                // Fallback: token immediately before the release token (25xx/26xx) is likely the test type
+                for (var j = 1; j < parts.length; j++) {
+                    if (/^2(?:5|6)\d{2}$/.test(parts[j])) {
+                        return parts[j - 1] || null;
+                    }
+                }
+
+                // Last fallback: common position for names like FIN_TRM_AB_UNIT_2612_1.141
+                return parts.length >= 4 ? parts[3] : null;
             },
 
             getProductArea: function (testPlanName) {
@@ -371,20 +450,44 @@ sap.ui.define([
 
             parseReleaseFromName: function (name) {
                 if (!name) { return null; }
-                var m = name.match(/(?:^|[^0-9])(26\d{2})(?!\d)/);
-                return m && m[1] ? m[1] : null;
+                // Prefer separator-delimited token like '2508' or '2602'
+                var parts = String(name).split(/[_\s\-\.\|]+/);
+                for (var i = 0; i < parts.length; i++) {
+                    var token = parts[i];
+                    if (/^2(?:5|6)\d{2}$/.test(token)) {
+                        return token;
+                    }
+                }
+                // Fallback: find standalone 2500-2699 occurrence with word boundaries
+                var m = String(name).match(/\b2(?:5|6)\d{2}\b/);
+                return m ? m[0] : null;
             },
 
             parseUI5VersionFromName: function (name) {
                 if (!name) { return null; }
-                var m = name.match(/\b(\d{4}X)\b/);
-                if (m && m[1]) { return m[1]; }
-                var m2 = name.match(/\b1\.(\d{3})\b/);
+                // Prefer underscore-/separator-delimited token like '1141X' or '1141x' (normalize to uppercase)
+                var parts = String(name).split(/[_\s\-\.\|]+/);
+                for (var i = 0; i < parts.length; i++) {
+                    var token = parts[i];
+                    // 4-digit + X/x (e.g., 1141X or 1141x)
+                    if (/^\d{4}[Xx]$/.test(token)) {
+                        return token.toUpperCase();
+                    }
+                    // Also accept 3-digit + X/x (e.g., 114X or 114x)
+                    if (/^\d{3}[Xx]$/.test(token)) {
+                        return token.toUpperCase();
+                    }
+                }
+                // Fallback: detect '1.141' style and convert to '1141X'
+                var m2 = String(name).match(/\b1\.(\d{3})\b/);
                 if (m2 && m2[1]) {
                     var minor = parseInt(m2[1], 10);
                     var val = 1000 + minor;
                     return String(val) + "X";
                 }
+                // Last resort: generic match without word-boundary constraints
+                var m3 = String(name).match(/(\d{3,4}[Xx])/);
+                if (m3 && m3[1]) { return m3[1].toUpperCase(); }
                 return null;
             },
 
@@ -398,10 +501,10 @@ sap.ui.define([
                 }
 
 
-                var oMultiInputFilter = this.getView().byId("idMInpTestPlan");
-                if (oMultiInputFilter) {
-                    oMultiInputFilter.setValue("");
-                    oMultiInputFilter.removeAllTokens();
+                var oMCBTestPlan = oView.byId("idMCBoxTestPlan");
+                if (oMCBTestPlan) {
+                    oMCBTestPlan.setSelectedKeys([]);
+                    oMCBTestPlan.removeAllSelectedItems();
                 }
 
 
@@ -435,7 +538,7 @@ sap.ui.define([
                 if (!this._TestPlanDialog) {
                     this._TestPlanDialog = sap.ui.xmlfragment("vicstartintegration.view.fragment.TestPlanVHDialog", this);
                     this._TestPlanDialog.addStyleClass("sapUiSizeCompact");
-                    oView.addDependent(this._oValueHelpDialog);
+                    oView.addDependent(this._TestPlanDialog);
                 }
                 this._TestPlanDialog.setModel(oView.getModel("mTestPlan"), "mTestPlan");
 
@@ -493,39 +596,30 @@ sap.ui.define([
             onFBGoPress: function (oEvent) {
                 var oView = this.getView();
                 var oTable = oView.byId("idTblTestPlan");
+                if (!oTable) { return; }
                 var oBinding = oTable.getBinding("items");
+                if (!oBinding) { return; }
 
                 var aOrFilter = [];
                 var aAndFilter = [];
                 var aSelectedSimilarity = oView.byId("idMCBoxsimilarity").getSelectedKeys();
 
                 aSelectedSimilarity.forEach(function (selectedItem) {
-                    var oValue1 = selectedItem.split('%')[0];
-                    var oValue2 = selectedItem.split('%')[1]?.split('-')[1];
+                    var sText = selectedItem;
 
-                    if (oValue1 === '<96') {
-                        oValue1 = oValue1.split('<')[1];
-                        aOrFilter.push(new sap.ui.model.Filter("percentSuccess", sap.ui.model.FilterOperator.LT, oValue1));
-
-                    } else if (oValue1 === '96' && oValue2 === '98') {
-                        aOrFilter.push(new sap.ui.model.Filter("percentSuccess", sap.ui.model.FilterOperator.BT, oValue1, oValue2));
-                    } else if (oValue1 === '98' && oValue2 === '99') {
-                        oValue2 = '100';
-                        aOrFilter.push(new sap.ui.model.Filter("percentSuccess", sap.ui.model.FilterOperator.BT, oValue1, oValue2));
-                    } else if (oValue1 === '100') {
-                        aOrFilter.push(new sap.ui.model.Filter("percentSuccess", sap.ui.model.FilterOperator.EQ, oValue1));
+                    if (sText.indexOf("<96") === 0 || sText.indexOf("<96") === 0) {
+                        aOrFilter.push(new sap.ui.model.Filter("percentSuccess", sap.ui.model.FilterOperator.LT, 96));
+                    } else if (sText.indexOf("96%-98%") === 0) {
+                        aOrFilter.push(new sap.ui.model.Filter("percentSuccess", sap.ui.model.FilterOperator.BT, 96, 97.9999));
+                    } else if (sText.indexOf("98%-99%") === 0) {
+                        aOrFilter.push(new sap.ui.model.Filter("percentSuccess", sap.ui.model.FilterOperator.BT, 98, 99.9999));
+                    } else if (sText.indexOf("100%") === 0) {
+                        aOrFilter.push(new sap.ui.model.Filter("percentSuccess", sap.ui.model.FilterOperator.EQ, 100));
                     }
                 });
 
                 if (aOrFilter.length > 0) {
-                    var oCombinedFilter = new sap.ui.model.Filter({
-                        filters: aOrFilter,
-                        and: false
-                    });
-
                     aAndFilter.push(new sap.ui.model.Filter(aOrFilter, false));
-                } else {
-                    oBinding.filter([]);
                 }
 
                 var sSrchValue = this.getView().byId("idSearchField").getValue();
@@ -538,16 +632,21 @@ sap.ui.define([
                     aAndFilter.push(new sap.ui.model.Filter(aOrFilter, false));
                 }
 
-                var aFilterTestPlanItems = oView.byId("idMInpTestPlan").getTokens();
-                if (aFilterTestPlanItems && aFilterTestPlanItems.length > 0) {
-                    for (var i = 0; i < aFilterTestPlanItems.length; i++) {
-                        aOrFilter.push(new Filter("testPlanName", FilterOperator.Contains, aFilterTestPlanItems[i].getProperty("text")));
+                aOrFilter = [];
+                var oMCBTestPlan = oView.byId("idMCBoxTestPlan");
+                if (oMCBTestPlan) {
+                    var aFilterTestPlanItems = oMCBTestPlan.getSelectedItems();
+                    if (aFilterTestPlanItems && aFilterTestPlanItems.length > 0) {
+                        for (var i = 0; i < aFilterTestPlanItems.length; i++) {
+                            aOrFilter.push(new Filter("testPlanName", FilterOperator.Contains, aFilterTestPlanItems[i].getProperty("key")));
+                        }
+                        aAndFilter.push(new Filter(aOrFilter, false));
                     }
-                    aAndFilter.push(new Filter(aOrFilter, false));
                 }
 
                 aOrFilter = [];
-                var aFilterTestScpItems = oView.byId("idMCBoxTestScope").getSelectedItems();
+                var oMCBTestScope = oView.byId("idMCBoxTestScope");
+                var aFilterTestScpItems = oMCBTestScope ? oMCBTestScope.getSelectedItems() : null;
                 if (aFilterTestScpItems && aFilterTestScpItems.length > 0) {
                     for (var i = 0; i < aFilterTestScpItems.length; i++) {
                         aOrFilter.push(new Filter("TestType", FilterOperator.Contains, aFilterTestScpItems[i].getProperty("key")));
@@ -555,6 +654,16 @@ sap.ui.define([
                     aAndFilter.push(new Filter(aOrFilter, false));
                 }
 
+
+                // Product Area filter (OR within dropdown, AND with others)
+                aOrFilter = [];
+                var aFilterProdAreaItems = oView.byId("idMCBoxProdArea").getSelectedItems();
+                if (aFilterProdAreaItems && aFilterProdAreaItems.length > 0) {
+                    for (var i = 0; i < aFilterProdAreaItems.length; i++) {
+                        aOrFilter.push(new Filter("ProductArea", FilterOperator.EQ, aFilterProdAreaItems[i].getProperty("key")));
+                    }
+                    aAndFilter.push(new Filter(aOrFilter, false));
+                }
 
                 // Release filter (OR within dropdown, AND with others)
                 aOrFilter = [];
@@ -568,12 +677,15 @@ sap.ui.define([
 
                 // UI5 Version filter (OR within dropdown, AND with others)
                 aOrFilter = [];
-                var aFilterUI5Items = oView.byId("idMCBoxUI5Version").getSelectedItems();
-                if (aFilterUI5Items && aFilterUI5Items.length > 0) {
-                    for (var i = 0; i < aFilterUI5Items.length; i++) {
-                        aOrFilter.push(new Filter("UI5Version", FilterOperator.EQ, aFilterUI5Items[i].getProperty("key")));
+                var oUI5MCB = oView.byId("idMCBoxUI5Version");
+                if (oUI5MCB) {
+                    var aFilterUI5Items = oUI5MCB.getSelectedItems();
+                    if (aFilterUI5Items && aFilterUI5Items.length > 0) {
+                        for (var i = 0; i < aFilterUI5Items.length; i++) {
+                            aOrFilter.push(new Filter("UI5Version", FilterOperator.EQ, aFilterUI5Items[i].getProperty("key")));
+                        }
+                        aAndFilter.push(new Filter(aOrFilter, false));
                     }
-                    aAndFilter.push(new Filter(aOrFilter, false));
                 }
 
                 var oFinalFilter = aAndFilter.length > 0 ? new Filter(aAndFilter, true) : null;
@@ -581,9 +693,15 @@ sap.ui.define([
                 oView.byId('idTblTitle').setText("Test Plans (" + oBinding.getLength() + ")");
 
                 this._updateChartWithFilteredData();
+                this._refreshDropdownOptions();
             },
 
             onReleaseChange: function (oEvent) {
+                this.onFBGoPress();
+                this._refreshDropdownOptions();
+            },
+
+            onTestPlanChange: function (oEvent) {
                 this.onFBGoPress();
                 this._refreshDropdownOptions();
             },
@@ -603,42 +721,126 @@ sap.ui.define([
                 this._refreshDropdownOptions();
             },
 
+            onSimilatitySelect: function () {
+                this.onFBGoPress();
+                this._refreshDropdownOptions();
+            },
+
+            onFBResetPress: function () {
+                this.onFBClearPress();
+            },
+
+            onTblUpdateFinished: function () {
+                var oTable = this.byId("idTblTestPlan");
+                if (oTable) {
+                    var oBinding = oTable.getBinding("items");
+                    if (oBinding) {
+                        this.byId("idTblTitle").setText("Test Plans (" + oBinding.getLength() + ")");
+                    }
+                }
+            },
+
+            onLogsRefresh: function () {
+                this._loadData();
+            },
+
+            onChartSelect: function (oEvent) {
+                this._onChartSelectData(oEvent);
+            },
+
             _refreshDropdownOptions: function () {
                 var oView = this.getView();
-                var oTable = oView.byId("idTblTestPlan");
-                var oBinding = oTable && oTable.getBinding("items");
 
-                var aData = [];
-                if (oBinding && oBinding.getContexts) {
-                    aData = oBinding.getContexts().map(function (c) { return c.getObject(); });
+                // Always start from full original dataset (upstream-only recompute)
+                var oOriginalModel = oView.getModel("msimilaritypercent");
+                var dataAll = (oOriginalModel && oOriginalModel.getData()) || [];
+
+                // Current selections
+                var oPA = oView.byId("idMCBoxProdArea");
+                var selPA = oPA ? oPA.getSelectedKeys() : [];
+
+                var oRel = oView.byId("idMCBoxRelease");
+                var selRelease = oRel ? oRel.getSelectedKeys() : [];
+
+                var oUI5 = oView.byId("idMCBoxUI5Version");
+                var selUI5 = oUI5 ? oUI5.getSelectedKeys() : [];
+
+                var oSim = oView.byId("idMCBoxsimilarity");
+                var selSim = oSim ? oSim.getSelectedKeys() : [];
+
+                // Helper to map percentSuccess to bucket label
+                function bucketLabel(val) {
+                    var v = Number(val) || 0;
+                    if (v < 96) { return "<96%"; }
+                    if (v < 98) { return "96%-98%"; }
+                    if (v < 100) { return "98%-99%"; }
+                    return "100%";
                 }
-                if (!aData || aData.length === 0) {
-                    var oOriginalModel = oView.getModel("msimilaritypercent");
-                    aData = oOriginalModel ? oOriginalModel.getData() : [];
-                }
 
-                var mReleaseSet = {};
-                var mUI5Set = {};
-                var mProdAreaSet = {};
-                var mTestTypeSet = {};
-
-                (aData || []).forEach(function (r) {
-                    if (r.Release) { mReleaseSet[r.Release] = true; }
-                    if (r.UI5Version) { mUI5Set[r.UI5Version] = true; }
-                    if (r.ProductArea) { mProdAreaSet[r.ProductArea] = true; }
-                    if (r.TestType) { mTestTypeSet[r.TestType] = true; }
+                // Product Area options: always from full data (never restricted)
+                var prodAreaSet = {};
+                (dataAll || []).forEach(function (r) {
+                    if (r.ProductArea) { prodAreaSet[r.ProductArea] = true; }
                 });
-
-                var aRelease = Object.keys(mReleaseSet).sort().map(function (x) { return { Release: x }; });
-                var aUI5Version = Object.keys(mUI5Set).sort().map(function (x) { return { UI5Version: x }; });
-                var aProdArea = Object.keys(mProdAreaSet).sort().map(function (x) { return { ProductArea: x }; });
-                var aTesScp = Object.keys(mTestTypeSet).sort().map(function (x) { return { TestType: x }; });
-
-                oView.setModel(new JSONModel(aRelease), "mRelease");
-                oView.setModel(new JSONModel(aUI5Version), "mUI5Version");
+                var aProdArea = Object.keys(prodAreaSet).sort().map(function (x) { return { ProductArea: x }; });
                 oView.setModel(new JSONModel(aProdArea), "mProdArea");
+
+                // Release options: depends only on selected Product Areas (union)
+                var baseForRelease = selPA && selPA.length
+                    ? dataAll.filter(function (r) { return r.ProductArea && selPA.indexOf(r.ProductArea) !== -1; })
+                    : dataAll;
+                var releaseSet = {};
+                (baseForRelease || []).forEach(function (r) {
+                    if (r.Release) { releaseSet[r.Release] = true; }
+                });
+                var aRelease = Object.keys(releaseSet).sort().map(function (x) { return { Release: x }; });
+                oView.setModel(new JSONModel(aRelease), "mRelease");
+
+                // UI5 Version options: depends on Product Areas + Releases (union)
+                var baseForUI5 = (selRelease && selRelease.length)
+                    ? baseForRelease.filter(function (r) { return r.Release && selRelease.indexOf(r.Release) !== -1; })
+                    : baseForRelease;
+                var ui5Set = {};
+                (baseForUI5 || []).forEach(function (r) {
+                    if (r.UI5Version) { ui5Set[r.UI5Version] = true; }
+                });
+                var aUI5Version = Object.keys(ui5Set).sort().map(function (x) { return { UI5Version: x }; });
+                oView.setModel(new JSONModel(aUI5Version), "mUI5Version");
+
+                // Available similarity buckets under current upstream filters (PA + Release)
+                var simSet = {};
+                (baseForUI5 || []).forEach(function (r) {
+                    simSet[bucketLabel(r.percentSuccess)] = true;
+                });
+                var aAvailSimKeys = Object.keys(simSet);
+
+                // Test Plan options: depends on Product Areas + Releases + UI5 Versions + Similarity
+                var baseForTP = (selUI5 && selUI5.length)
+                    ? baseForUI5.filter(function (r) { return r.UI5Version && selUI5.indexOf(r.UI5Version) !== -1; })
+                    : baseForUI5;
+
+                if (selSim && selSim.length) {
+                    baseForTP = baseForTP.filter(function (r) {
+                        return selSim.indexOf(bucketLabel(r.percentSuccess)) !== -1;
+                    });
+                }
+
+                var testPlanSet = {};
+                (baseForTP || []).forEach(function (r) {
+                    if (r.testPlanName) { testPlanSet[r.testPlanName] = true; }
+                });
+                var aTestPlan = Object.keys(testPlanSet).sort().map(function (x) { return { testPlanName: x }; });
+                oView.setModel(new JSONModel(aTestPlan), "mTestPlan");
+
+                // Test Type list (leave available globally; keep minimal impact)
+                var testTypeSet = {};
+                (dataAll || []).forEach(function (r) {
+                    if (r.TestType) { testTypeSet[r.TestType] = true; }
+                });
+                var aTesScp = Object.keys(testTypeSet).sort().map(function (x) { return { TestType: x }; });
                 oView.setModel(new JSONModel(aTesScp), "mTesScp");
 
+                // Intersect selected keys against what is now available.
                 function _intersectSelectedKeys(sControlId, aAvailableKeys) {
                     var oMCB = oView.byId(sControlId);
                     if (!oMCB) { return; }
@@ -647,16 +849,25 @@ sap.ui.define([
                     oMCB.setSelectedKeys(aNewKeys);
                 }
 
+                // Keep PA keys valid (list is universe, so this is largely a no-op)
+                _intersectSelectedKeys("idMCBoxProdArea", aProdArea.map(function (o) { return o.ProductArea; }));
+
+                // Prune downstream invalid selections
                 _intersectSelectedKeys("idMCBoxRelease", aRelease.map(function (o) { return o.Release; }));
                 _intersectSelectedKeys("idMCBoxUI5Version", aUI5Version.map(function (o) { return o.UI5Version; }));
-                _intersectSelectedKeys("idMCBoxProdArea", aProdArea.map(function (o) { return o.ProductArea; }));
+                _intersectSelectedKeys("idMCBoxTestPlan", aTestPlan.map(function (o) { return o.testPlanName; }));
                 _intersectSelectedKeys("idMCBoxTestScope", aTesScp.map(function (o) { return o.TestType; }));
+
+                // Prune similarity selections to available buckets under current upstream filters
+                _intersectSelectedKeys("idMCBoxsimilarity", aAvailSimKeys);
             },
 
             _updateChartWithFilteredData: function () {
                 var oView = this.getView();
                 var oTable = oView.byId("idTblTestPlan");
+                if (!oTable) { return; }
                 var oBinding = oTable.getBinding("items");
+                if (!oBinding) { return; }
 
        
                 var aFilteredData = [];
@@ -689,11 +900,11 @@ sap.ui.define([
                 var oSearchField = this.getView().byId("idSearchField");
                 oSearchField.setValue("");
 
-                var oTestPlan = this.getView().byId("idMInpTestPlan");
-                oTestPlan.setTokens([]);
+                var oTestPlan = this.getView().byId("idMCBoxTestPlan");
+                if (oTestPlan) { oTestPlan.setSelectedKeys([]); }
 
                 var oTestType = this.getView().byId("idMCBoxTestScope");
-                oTestType.setSelectedKeys([]);
+                if (oTestType) { oTestType.setSelectedKeys([]); }
 
                 var oSimilarityComboBox = this.getView().byId("idMCBoxsimilarity");
                 oSimilarityComboBox.setSelectedKeys([]);
@@ -701,8 +912,16 @@ sap.ui.define([
                 var oProductArea = this.getView().byId("idMCBoxProdArea");
                 oProductArea.setSelectedKeys([]);
 
+                var oRelease = this.getView().byId("idMCBoxRelease");
+                if (oRelease) { oRelease.setSelectedKeys([]); }
+
+                var oUI5Version = this.getView().byId("idMCBoxUI5Version");
+                if (oUI5Version) { oUI5Version.setSelectedKeys([]); }
+
                 var oTable = this.getView().byId("idTblTestPlan");
+                if (!oTable) { return; }
                 var oBinding = oTable.getBinding("items");
+                if (!oBinding) { return; }
                 oBinding.filter([]);
 
                 this.getView().byId('idTblTitle').setText("Test Plans (" + oBinding.getLength() + ")");
@@ -849,25 +1068,10 @@ sap.ui.define([
 
             onSearchFieldPress: function (oEvent) {
 
-                var sQuery = oEvent.getSource().getValue();
+                // Delegate to consolidated filter handler so Search composes with all other filters
+                // (OR within a single MultiComboBox and AND across different controls)
+                this.onFBGoPress();
 
-                var oTable = this.byId("idTblTestPlan");
-                var oBinding = oTable.getBinding("items");
-
-                var aFilters = [];
-                if (sQuery && sQuery.trim() !== "") {
-                    aFilters.push(new sap.ui.model.Filter([
-                        new sap.ui.model.Filter("testPlanName", sap.ui.model.FilterOperator.Contains, sQuery),
-                        new sap.ui.model.Filter("ProductArea", sap.ui.model.FilterOperator.Contains, sQuery),
-                        new sap.ui.model.Filter("TestType", sap.ui.model.FilterOperator.Contains, sQuery)
-                    ], false)); 
-                }
-
-                oBinding.filter(aFilters);
-
-                if (!oBinding.getLength()) {
-                    sap.m.MessageToast.show("No matching results found");
-                }
             },
 
             oCompareButton: function () {

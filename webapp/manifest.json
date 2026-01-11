@@ -5,7 +5,7 @@
     "type": "application",
     "i18n": "i18n/i18n.properties",
     "applicationVersion": {
-      "version": "3.0.0"
+      "version": "3.1.0"
     },
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -114,32 +114,6 @@
         "settings": {
           "bundleName": "vicstartintegration.i18n.i18n"
         }
-      },
-      "testPlanDetails": {
-        "type": "sap.ui.model.json.JSONModel",
-        "settings": {},
-        "uri": "/EPVP/testPlanDetails",
-        "preload": true
-      },
-      "STARTPROCESSLOG_SRV": {
-        "type": "sap.ui.model.odata.v2.ODataModel",
-        "settings": {
-          "defaultOperationMode": "Server",
-          "defaultBindingMode": "OneWay",
-          "defaultCountMode": "Request"
-        },
-        "dataSource": "STARTPROCESSLOG_SRV",
-        "preload": true
-      },
-      "StartSrvModel": {
-        "type": "sap.ui.model.odata.v2.ODataModel",
-        "settings": {
-          "defaultOperationMode": "Server",
-          "defaultBindingMode": "OneWay",
-          "defaultCountMode": "Request"
-        },
-        "dataSource": "START_SRV",
-        "preload": true
       },
       "mSimilarity": {
         "type": "sap.ui.model.json.JSONModel",

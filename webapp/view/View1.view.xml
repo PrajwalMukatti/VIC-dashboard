@@ -24,29 +24,8 @@
 								<SearchField id="idSearchField" placeholder="Search" showSearchButton="true" width="auto" search="onSearchFieldPress"/>
 							</fb:control>
 		</fb:FilterGroupItem>
-        <fb:FilterGroupItem id='item2' groupName="__$INTERNAL$" name="B" label="Test Plan " labelTooltip="Test plans" visibleInFilterBar="true">
-							<fb:control>
-								<MultiInput id="idMInpTestPlan" valueHelpRequest="onTestPlanVH"></MultiInput>
-							</fb:control>
-		</fb:FilterGroupItem>
-		<fb:FilterGroupItem groupName="__$INTERNAL$" name="G" label="Test Type " visibleInFilterBar="true">
-							<fb:control>
-								<MultiComboBox id="idMCBoxTestScope" width="auto" selectionFinish="onTestTypeChange" items="{path :'mTesScp>/' , templateShareable:false}">
-									<items>
-										<core:Item text="{ path:'mTesScp>TestType' }" enabled="true" key="{ path:'mTesScp>TestType' }"/>
-									</items>
-								</MultiComboBox>
-							</fb:control>
-		</fb:FilterGroupItem>
-		<fb:FilterGroupItem groupName="__$INTERNAL$" name="H" label="Similarity % " visibleInFilterBar="true" change="onSimilatitySelect">
-							<fb:control>
-								<MultiComboBox id="idMCBoxsimilarity" width="auto" items="{path : 'mSimilarity>/similaritySet' , templateShareable:false}">
-									<items>
-										<core:Item key="{path:  'mSimilarity>Description' }" enabled="true" text="{ path : 'mSimilarity>Description' }" />
-									</items>
-								</MultiComboBox>
-							</fb:control>
-		</fb:FilterGroupItem>
+
+        <!-- Product Area -->
         <fb:FilterGroupItem id='item3' groupName="__$INTERNAL$" name="E" label="Product Area " visibleInFilterBar="true">
 							<fb:control>
 								<MultiComboBox id="idMCBoxProdArea" width="auto" selectionFinish="onProductAreaChange" items="{path :'mProdArea>/' , templateShareable:false}">
@@ -56,6 +35,9 @@
 								</MultiComboBox>
 							</fb:control>
 		</fb:FilterGroupItem>
+
+
+        <!-- Release -->
 		<fb:FilterGroupItem groupName="__$INTERNAL$" name="R" label="Release" visibleInFilterBar="true">
 							<fb:control>
 								<MultiComboBox id="idMCBoxRelease" width="auto" selectionFinish="onReleaseChange" items="{path :'mRelease>/' , templateShareable:false}">
@@ -65,7 +47,9 @@
 								</MultiComboBox>
 							</fb:control>
 		</fb:FilterGroupItem>
-		<fb:FilterGroupItem groupName="__$INTERNAL$" name="U" label="UI5 Version" visibleInFilterBar="true">
+
+		<!-- UI5 Version -->
+		<fb:FilterGroupItem groupName="__$INTERNAL$" name="G" label="UI5 Version " visibleInFilterBar="true">
 							<fb:control>
 								<MultiComboBox id="idMCBoxUI5Version" width="auto" selectionFinish="onUI5VersionChange" items="{path :'mUI5Version>/' , templateShareable:false}">
 									<items>
@@ -74,7 +58,29 @@
 								</MultiComboBox>
 							</fb:control>
 		</fb:FilterGroupItem>
-    </fb:filterGroupItems>              
+
+        <!-- Similarity -->
+		<fb:FilterGroupItem groupName="__$INTERNAL$" name="H" label="Similarity % " visibleInFilterBar="true" change="onSimilatitySelect">
+							<fb:control>
+								<MultiComboBox id="idMCBoxsimilarity" width="auto" selectionFinish="onSimilatitySelect" items="{path : 'mSimilarity>/similaritySet' , templateShareable:false}">
+									<items>
+										<core:Item key="{path:  'mSimilarity>Description' }" enabled="true" text="{ path : 'mSimilarity>Description' }" />
+									</items>
+								</MultiComboBox>
+							</fb:control>
+		</fb:FilterGroupItem>
+
+        <!-- Test Plan as dropdown (no value help) -->
+        <fb:FilterGroupItem id='item2' groupName="__$INTERNAL$" name="B" label="Test Plan " labelTooltip="Test plans" visibleInFilterBar="true">
+							<fb:control>
+								<MultiComboBox id="idMCBoxTestPlan" width="auto" selectionFinish="onTestPlanChange" items="{path :'mTestPlan>/' , templateShareable:false}">
+									<items>
+										<core:Item text="{ path:'mTestPlan>testPlanName' }" enabled="true" key="{ path:'mTestPlan>testPlanName' }"/>
+									</items>
+								</MultiComboBox>
+							</fb:control>
+		</fb:FilterGroupItem>
+    </fb:filterGroupItems>
     </fb:FilterBar>
      </f:DynamicPageHeader>
       </f:header>

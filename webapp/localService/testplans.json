@@ -1,0 +1,22 @@
+[
+  {
+    "testPlanName": "FINA_X_Y_E2E_2611_1.141",
+    "percentSuccess": 98,
+    "executeOn": "2025-10-01"
+  },
+  {
+    "testPlanName": "FIN_AA_M_N_E2E_2611_1.141",
+    "percentSuccess": 96.5,
+    "executeOn": "2025-10-02"
+  },
+  {
+    "testPlanName": "SALES_ZZ_QA_E2E_2612_1.141",
+    "percentSuccess": 99,
+    "executeOn": "2025-10-02"
+  },
+  {
+    "testPlanName": "FIN_TRM_AB_UNIT_2612_1.141",
+    "percentSuccess": 95,
+    "executeOn": "2025-10-03"
+  }
+]
