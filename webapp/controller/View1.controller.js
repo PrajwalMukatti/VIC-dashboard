@@ -191,6 +191,67 @@ sap.ui.define([
                 }
             },
 
+            onDownloadChartImage: function () {
+                try {
+                    var oViz = this.byId("mainViz");
+                    if (!oViz) { sap.m.MessageToast.show("Chart not available."); return; }
+                    var oDom = oViz.getDomRef();
+                    if (!oDom) { sap.m.MessageToast.show("Chart not ready."); return; }
+                    var oSvg = oDom.querySelector("svg");
+                    if (!oSvg) { sap.m.MessageToast.show("Chart SVG not found."); return; }
+
+                    var serializer = new XMLSerializer();
+                    var sSVG = serializer.serializeToString(oSvg);
+
+                    var width = parseInt(oSvg.getAttribute("width"), 10) || oDom.clientWidth || 1200;
+                    var height = parseInt(oSvg.getAttribute("height"), 10) || oDom.clientHeight || 420;
+
+                    var svgBlob = new Blob([sSVG], { type: "image/svg+xml;charset=utf-8" });
+                    var url = URL.createObjectURL(svgBlob);
+                    var img = new Image();
+                    img.onload = function () {
+                        try {
+                            var canvas = document.createElement("canvas");
+                            canvas.width = width;
+                            canvas.height = height;
+                            var ctx = canvas.getContext("2d");
+
+                            // white background for better readability
+                            ctx.fillStyle = "#ffffff";
+                            ctx.fillRect(0, 0, width, height);
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            canvas.toBlob(function (blob) {
+                                var a = document.createElement("a");
+                                a.href = URL.createObjectURL(blob);
+                                a.download = "vic-chart-" + new Date().toISOString().replace(/[:T]/g, "-").slice(0, 19) + ".png";
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(a.href);
+                                URL.revokeObjectURL(url);
+                            }, "image/png");
+                        } catch (e2) {
+                            sap.m.MessageToast.show("PNG export failed, falling back to SVG.");
+                            var a2 = document.createElement("a");
+                            a2.href = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(sSVG);
+                            a2.download = "vic-chart.svg";
+                            document.body.appendChild(a2);
+                            a2.click();
+                            document.body.removeChild(a2);
+                            URL.revokeObjectURL(url);
+                        }
+                    };
+                    img.onerror = function () {
+                        sap.m.MessageToast.show("Failed to render chart image.");
+                        URL.revokeObjectURL(url);
+                    };
+                    img.src = url;
+                } catch (e) {
+                    sap.m.MessageToast.show("Download failed.");
+                }
+            },
+
             _transformToChartData: function (aRows) {
                 var mGroups = {}; 
 
