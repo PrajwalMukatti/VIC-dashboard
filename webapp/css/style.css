@@ -189,3 +189,9 @@
   
 
 /*}*/
+
+/* Hide checkbox for the first (Select All) item in all MultiComboBox dropdown popovers */
+.sapMPopup-CTX .sapMMultiComboBoxItem:first-child .sapMCb,
+.sapMPopup-CTX .sapMComboBoxBaseItem:first-child .sapMCb {
+  display: none !important;
+}
