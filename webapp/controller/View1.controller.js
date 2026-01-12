@@ -363,7 +363,7 @@ _applyChartConfig: function (sChartType, oVizTarget) {
                     oViz.setVizProperties({
                         general: { title: { visible: false } }, 
                         plotArea: { dataLabel: { visible: true }, innerRadius: sChartType === "donut" ? 60 : 0 },
-                        legend: { visible: true } 
+                        legend: { visible: this.getView().getModel("state").getProperty("/legendVisible") } 
                     });
 
                 } else {
@@ -394,7 +394,7 @@ _applyChartConfig: function (sChartType, oVizTarget) {
                     oViz.setVizProperties({
                         general: { title: { visible: false } }, 
                         plotArea: { dataLabel: { visible: true } }, 
-                        legend: { visible: true } 
+                        legend: { visible: this.getView().getModel("state").getProperty("/legendVisible") } 
                     });
                 }
                 oViz.invalidate();
