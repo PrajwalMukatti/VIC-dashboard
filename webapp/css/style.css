@@ -195,3 +195,18 @@
 .sapMPopup-CTX .sapMComboBoxBaseItem:first-child .sapMCb {
   display: none !important;
 }
+
+/* Visual zoom/pan for charts */
+.viz-pan-container {
+  overflow: hidden;
+}
+
+.viz-svg-zoom {
+  transform-origin: 0 0;
+  will-change: transform;
+  cursor: grab;
+}
+
+.viz-svg-zoom.dragging {
+  cursor: grabbing;
+}

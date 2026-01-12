@@ -113,6 +113,10 @@
                   </items>
                </Select>
                <!-- <ToggleButton id="navToggle" text="Chart Click → Navigate" pressed="{state>/chartNavEnabled}" press="onToggleChartNav"/> -->
+               <Button id="fullScreenBtn" icon="sap-icon://full-screen" tooltip="Full Screen" press="onOpenChartFullScreen" visible="{= ${view>/view}==='chart'}"/>
+               <Button id="zoomInBtn" icon="sap-icon://zoom-in" tooltip="Zoom In" press="onZoomIn" visible="{= ${view>/view}==='chart'}"/>
+<Button id="zoomOutBtn" icon="sap-icon://zoom-out" tooltip="Zoom Out" press="onZoomOut" visible="{= ${view>/view}==='chart'}"/>
+               <Button id="legendToggleBtn" icon="sap-icon://legend" tooltip="Show/Hide Legend" press="onToggleLegend" visible="{= ${view>/view}==='chart'}"/>
                <Button id="downloadChartBtn" icon="sap-icon://download" tooltip="Download Chart Image" press="onDownloadChartImage" visible="{= ${view>/view}==='chart'}"/>
                <Button icon="sap-icon://excel-attachment" tooltip="Export to Excel" press="onExport" visible="{= ${view>/view}==='table'}"/>
             </OverflowToolbar>

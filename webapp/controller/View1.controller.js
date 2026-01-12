@@ -40,8 +40,8 @@ sap.ui.define([
             formatter: formatter,
             oCompareView: null,
 
-            onInit: function () {
-                var oStateModel = new JSONModel({ headerExpanded: true, chartType: "column", chartNavEnabled: true });
+onInit: function () {
+                var oStateModel = new JSONModel({ headerExpanded: true, chartType: "column", chartNavEnabled: true, legendVisible: true, zoomLevelMain: 1, panXMain: 0, panYMain: 0, zoomLevelFull: 1, panXFull: 0, panYFull: 0 });
                 this.getView().setModel(oStateModel, "state");
 
                 var oViewModel = new JSONModel({ view: "chart" });
@@ -329,8 +329,8 @@ sap.ui.define([
                 oMockModel.setProperty("/PieChartData", aPieChartData);
             },
 
-            _applyChartConfig: function (sChartType) {
-                var oViz = this.byId("mainViz");
+_applyChartConfig: function (sChartType, oVizTarget) {
+                var oViz = oVizTarget || this.byId("mainViz");
                 if (!oViz) return;
 
                 var oChartModel = this.getView().getModel("mock");
@@ -442,7 +442,7 @@ sap.ui.define([
                 }
             },
 
-            attachAfterRendering: function () {
+attachAfterRendering: function () {
                 var oViz = this.byId("mainViz");
                 if (!oViz) {
                     console.warn("mainViz not found");
@@ -464,6 +464,17 @@ sap.ui.define([
                     oViz.attachSelectData(this._onChartSelectData.bind(this));
                     oViz.__selectHandlerAttached = true;
                 }
+
+                if (!oViz.__renderCompleteAttached) {
+                    oViz.attachRenderComplete(function () {
+                        this._applyZoomAndPan(oViz, false);
+                        this._attachPanHandlers(oViz, false);
+                    }.bind(this));
+                    oViz.__renderCompleteAttached = true;
+                }
+                // Apply initial zoom/pan visuals
+                this._applyZoomAndPan(oViz, false);
+                this._attachPanHandlers(oViz, false);
             },
 
             _onChartSelectData: function (oEvent) {
@@ -1412,6 +1423,210 @@ sap.ui.define([
                         }
                     });
                 }
+            },
+
+            // Full screen popup with chart and controls
+            onOpenChartFullScreen: function () {
+                if (!this._oChartDialog) {
+                    this._oChartDialog = new sap.m.Dialog({
+                        stretch: true,
+                        contentWidth: "100%",
+                        contentHeight: "100%",
+                        customHeader: new sap.m.Bar({
+                            contentMiddle: [
+                                new sap.m.Button({ icon: "sap-icon://zoom-in", tooltip: "Zoom In", press: this.onZoomIn.bind(this) }),
+                                new sap.m.Button({ icon: "sap-icon://zoom-out", tooltip: "Zoom Out", press: this.onZoomOut.bind(this) }),
+                                new sap.m.Button({ icon: "sap-icon://reset", tooltip: "Reset Zoom", press: this.onResetZoom.bind(this) }),
+                                new sap.m.Button({ icon: "sap-icon://legend", tooltip: "Show/Hide Legend", press: this.onToggleLegend.bind(this) }),
+                                new sap.m.Button({ icon: "sap-icon://download", tooltip: "Download Chart Image", press: this.onDownloadChartImage.bind(this) }),
+                                new sap.m.Button({ icon: "sap-icon://exit-full-screen", tooltip: "Close", press: this.onCloseChartFullScreen.bind(this) })
+                            ]
+                        })
+                    });
+
+                    var oFullViz = new VizFrame(this.createId("fullViz"), {
+                        height: "85vh",
+                        width: "100%",
+                        uiConfig: { applicationSet: "fiori" },
+                        vizType: this.getView().getModel("state").getProperty("/chartType")
+                    });
+                    oFullViz.setModel(this.getView().getModel("mock"), "mock");
+                    this._applyChartConfig(this.getView().getModel("state").getProperty("/chartType"), oFullViz);
+                    this._oChartDialog.addContent(oFullViz);
+                    this.getView().addDependent(this._oChartDialog);
+
+                    var oPopover = this.byId("idPopOver");
+                    if (oPopover) {
+                        try { oPopover.connect(oFullViz.getVizUid()); } catch (e) { /* no-op */ }
+                    }
+
+                    oFullViz.attachRenderComplete(function () {
+                        this._applyZoomAndPan(oFullViz, true);
+                        this._attachPanHandlers(oFullViz, true);
+                    }.bind(this));
+                } else {
+                    var oFullViz = this.byId("fullViz");
+                    if (oFullViz) {
+                        this._applyChartConfig(this.getView().getModel("state").getProperty("/chartType"), oFullViz);
+                        var oPopover = this.byId("idPopOver");
+                        if (oPopover) {
+                            try { oPopover.connect(oFullViz.getVizUid()); } catch (e) {}
+                        }
+                    }
+                }
+                this._oChartDialog.open();
+            },
+
+            onCloseChartFullScreen: function () {
+                if (this._oChartDialog) {
+                    var oPopover = this.byId("idPopOver");
+                    var oMainViz = this.byId("mainViz");
+                    if (oPopover && oMainViz) {
+                        try { oPopover.connect(oMainViz.getVizUid()); } catch (e) {}
+                    }
+                    this._oChartDialog.close();
+                }
+            },
+
+            onZoomIn: function () {
+                var bFull = !!(this._oChartDialog && this._oChartDialog.isOpen && this._oChartDialog.isOpen());
+                var sSuffix = bFull ? "Full" : "Main";
+                var oState = this.getView().getModel("state");
+                var z = Number(oState.getProperty("/zoomLevel" + sSuffix)) || 1;
+                z = Math.min(4, z + 0.25);
+                oState.setProperty("/zoomLevel" + sSuffix, z);
+                var oViz = this.byId(bFull ? "fullViz" : "mainViz");
+                this._applyZoomAndPan(oViz, bFull);
+            },
+
+onZoomOut: function () {
+                var bFull = !!(this._oChartDialog && this._oChartDialog.isOpen && this._oChartDialog.isOpen());
+                var sSuffix = bFull ? "Full" : "Main";
+                var oState = this.getView().getModel("state");
+                var z = Number(oState.getProperty("/zoomLevel" + sSuffix)) || 1;
+                z = Math.max(1, z - 0.25);
+                oState.setProperty("/zoomLevel" + sSuffix, z);
+                if (z === 1) {
+                    oState.setProperty("/panX" + sSuffix, 0);
+                    oState.setProperty("/panY" + sSuffix, 0);
+                }
+                var oViz = this.byId(bFull ? "fullViz" : "mainViz");
+                this._applyZoomAndPan(oViz, bFull);
+            },
+
+            onResetZoom: function () {
+                var bFull = !!(this._oChartDialog && this._oChartDialog.isOpen && this._oChartDialog.isOpen());
+                var sSuffix = bFull ? "Full" : "Main";
+                var oState = this.getView().getModel("state");
+                oState.setProperty("/zoomLevel" + sSuffix, 1);
+                oState.setProperty("/panX" + sSuffix, 0);
+                oState.setProperty("/panY" + sSuffix, 0);
+                var oViz = this.byId(bFull ? "fullViz" : "mainViz");
+                this._applyZoomAndPan(oViz, bFull);
+            },
+
+            onToggleLegend: function () {
+                var oState = this.getView().getModel("state");
+                var bVisible = !!oState.getProperty("/legendVisible");
+                bVisible = !bVisible;
+                oState.setProperty("/legendVisible", bVisible);
+                var oMainViz = this.byId("mainViz");
+                if (oMainViz) { try { oMainViz.setVizProperties({ legend: { visible: bVisible } }); } catch (e) {} }
+                var oFullViz = this.byId("fullViz");
+                if (oFullViz) { try { oFullViz.setVizProperties({ legend: { visible: bVisible } }); } catch (e) {} }
+            },
+
+_applyZoomAndPan: function (oViz, bFull) {
+                if (!oViz) return;
+                var oState = this.getView().getModel("state");
+                var sSuffix = bFull ? "Full" : "Main";
+                var z = Number(oState.getProperty("/zoomLevel" + sSuffix)) || 1;
+                var panX = Number(oState.getProperty("/panX" + sSuffix)) || 0;
+                var panY = Number(oState.getProperty("/panY" + sSuffix)) || 0;
+                var oDom = oViz.getDomRef();
+                if (!oDom) return;
+                var oSvg = oDom.querySelector("svg");
+                if (!oSvg) return;
+
+                oDom.classList.add("viz-pan-container");
+                oSvg.classList.add("viz-svg-zoom");
+                oSvg.style.transformOrigin = "0 0";
+                oSvg.style.transform = "translate(" + panX + "px," + panY + "px) scale(" + z + ")";
+            },
+
+            _attachPanHandlers: function (oViz, bFull) {
+                if (!oViz || oViz.__panHandlersAttached) return;
+                var oState = this.getView().getModel("state");
+                var sSuffix = bFull ? "Full" : "Main";
+                var oDom = oViz.getDomRef();
+                if (!oDom) return;
+                var oSvg = oDom.querySelector("svg");
+                if (!oSvg) return;
+
+                var that = this;
+                var dragging = false;
+                var lastX = 0, lastY = 0;
+
+                function onMouseDown(e) {
+                    var z = Number(oState.getProperty("/zoomLevel" + sSuffix)) || 1;
+                    if (z <= 1) return;
+                    dragging = true;
+                    lastX = e.clientX;
+                    lastY = e.clientY;
+                    oSvg.classList.add("dragging");
+                    e.preventDefault();
+                }
+                function onMouseMove(e) {
+                    if (!dragging) return;
+                    var panX = Number(oState.getProperty("/panX" + sSuffix)) || 0;
+                    var panY = Number(oState.getProperty("/panY" + sSuffix)) || 0;
+                    panX += (e.clientX - lastX);
+                    panY += (e.clientY - lastY);
+                    lastX = e.clientX;
+                    lastY = e.clientY;
+                    oState.setProperty("/panX" + sSuffix, panX);
+                    oState.setProperty("/panY" + sSuffix, panY);
+                    that._applyZoomAndPan(oViz, bFull);
+                }
+                function onMouseUp() {
+                    if (!dragging) return;
+                    dragging = false;
+                    oSvg.classList.remove("dragging");
+                }
+
+                oSvg.addEventListener("mousedown", onMouseDown);
+                window.addEventListener("mousemove", onMouseMove);
+                window.addEventListener("mouseup", onMouseUp);
+
+                oSvg.addEventListener("touchstart", function (e) {
+                    var z = Number(oState.getProperty("/zoomLevel" + sSuffix)) || 1;
+                    if (z <= 1) return;
+                    var t = e.touches[0];
+                    dragging = true;
+                    lastX = t.clientX;
+                    lastY = t.clientY;
+                    oSvg.classList.add("dragging");
+                }, { passive: true });
+                window.addEventListener("touchmove", function (e) {
+                    if (!dragging) return;
+                    var t = e.touches[0];
+                    var panX = Number(oState.getProperty("/panX" + sSuffix)) || 0;
+                    var panY = Number(oState.getProperty("/panY" + sSuffix)) || 0;
+                    panX += (t.clientX - lastX);
+                    panY += (t.clientY - lastY);
+                    lastX = t.clientX;
+                    lastY = t.clientY;
+                    oState.setProperty("/panX" + sSuffix, panX);
+                    oState.setProperty("/panY" + sSuffix, panY);
+                    that._applyZoomAndPan(oViz, bFull);
+                }, { passive: true });
+                window.addEventListener("touchend", function () {
+                    if (!dragging) return;
+                    dragging = false;
+                    oSvg.classList.remove("dragging");
+                });
+
+                oViz.__panHandlersAttached = true;
             }
 
 
