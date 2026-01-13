@@ -34,4 +34,10 @@ server:
             pathPrefix: /
             url: https://visual-image-comparator-service.cfapps.eu12.hana.ondemand.com
             destination: VIC_UI_DEV
-  
+        ui5:
+          - path: /resources
+            url: https://ui5.sap.com
+            version: 1.108.49
+          - path: /test-resources
+            url: https://ui5.sap.com
+            version: 1.108.49

@@ -361,7 +361,7 @@ _applyChartConfig: function (sChartType, oVizTarget) {
 
                     oViz.setVizType(sChartType);
                     oViz.setVizProperties({
-                        general: { title: { visible: false } }, 
+                        general: { title: { visible: true, text: "VIC Trend Chart" } }, 
                         plotArea: { dataLabel: { visible: true }, innerRadius: sChartType === "donut" ? 60 : 0 },
                         legend: { visible: this.getView().getModel("state").getProperty("/legendVisible") } 
                     });
@@ -392,7 +392,7 @@ _applyChartConfig: function (sChartType, oVizTarget) {
 
                     oViz.setVizType(sChartType);
                     oViz.setVizProperties({
-                        general: { title: { visible: false } }, 
+                        general: { title: { visible: true, text: "VIC Trend Chart" } }, 
                         plotArea: { dataLabel: { visible: true } }, 
                         legend: { visible: this.getView().getModel("state").getProperty("/legendVisible") } 
                     });
@@ -1113,30 +1113,34 @@ attachAfterRendering: function () {
                 }
             },
 
-            onExport: function () {
-                var aCols, oRowBinding, oSettings, oSheet, oTable;
+onExport: function () {
+                var aCols, oSettings, oSheet;
+                var oTable = this.byId('idTblTestPlan');
+                if (!oTable) { return; }
+                var oBinding = oTable.getBinding('items');
+                if (!oBinding) { return; }
 
-                if (!this._oTable) {
-                    this._oTable = this.byId('idTblTestPlan');
+                var aData = [];
+                try {
+                    var iLen = typeof oBinding.getLength === "function" ? oBinding.getLength() : 0;
+                    if (iLen > 0 && typeof oBinding.getContexts === "function") {
+                        var aCtx = oBinding.getContexts(0, iLen);
+                        aData = aCtx.map(function (ctx) { return ctx.getObject(); });
+                    }
+                    if (aData.length === 0) {
+                        var oOriginalModel = this.getView().getModel('msimilaritypercent');
+                        aData = oOriginalModel && oOriginalModel.getData ? (oOriginalModel.getData() || []) : [];
+                    }
+                } catch (e) {
+                    var oOriginalModel2 = this.getView().getModel('msimilaritypercent');
+                    aData = oOriginalModel2 && oOriginalModel2.getData ? (oOriginalModel2.getData() || []) : [];
                 }
 
-                oTable = this._oTable;
-                var aTableFilterData = [];
-                var aIndices = oTable.getBinding('items').aIndices;
-                var aTableFullData = oTable.getBinding('items').oList;
-                for (var i = 0; i < aIndices.length; i++) {
-                    aTableFilterData.push(aTableFullData[aIndices[i]]);
-                }
-                var mTempExportData = new JSONModel(aTableFilterData);
-                oRowBinding = mTempExportData.getProperty("/");
                 aCols = this.createColumnConfig();
-
                 oSettings = {
-                    workbook: {
-                        columns: aCols,
-                    },
-                    dataSource: oRowBinding,
-                    fileName: 'VIC test plan Results.xlsx',
+                    workbook: { columns: aCols },
+                    dataSource: aData,
+                    fileName: 'VIC test plan Results.xlsx'
                 };
 
                 oSheet = new Spreadsheet(oSettings);
@@ -1148,9 +1152,9 @@ attachAfterRendering: function () {
                     initialFocus: MessageBox.Action.OK,
                     onClose: function (sAction) {
                         if (sAction === "OK") {
-                            oSheet.build().finally(function () {
-                                oSheet.destroy();
-                            });
+                            oSheet.build().finally(function () { oSheet.destroy(); });
+                        } else {
+                            oSheet.destroy();
                         }
                     }
                 });
@@ -1432,8 +1436,8 @@ attachAfterRendering: function () {
                         stretch: true,
                         contentWidth: "100%",
                         contentHeight: "100%",
-                        customHeader: new sap.m.Bar({
-                            contentMiddle: [
+customHeader: new sap.m.Bar({
+                            contentRight: [
                                 new sap.m.Button({ icon: "sap-icon://zoom-in", tooltip: "Zoom In", press: this.onZoomIn.bind(this) }),
                                 new sap.m.Button({ icon: "sap-icon://zoom-out", tooltip: "Zoom Out", press: this.onZoomOut.bind(this) }),
                                 new sap.m.Button({ icon: "sap-icon://reset", tooltip: "Reset Zoom", press: this.onResetZoom.bind(this) }),

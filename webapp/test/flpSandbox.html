@@ -55,10 +55,10 @@
         };
     </script>
 
-    <script src="../test-resources/sap/ushell/bootstrap/sandbox.js" id="sap-ushell-bootstrap"></script>
+    <script src="/test-resources/sap/ushell/bootstrap/sandbox.js" id="sap-ushell-bootstrap"></script>
     <!-- Bootstrap the UI5 core library. 'data-sap-ui-frameOptions="allow"'' is a NON-SECURE setting for test environments -->
     <script id="sap-ui-bootstrap"
-        src="../resources/sap-ui-core.js"
+        src="/resources/sap-ui-core.js"
         data-sap-ui-libs="sap.m,sap.ui.core,sap.f,sap.suite.ui.generic.template,sap.ui.comp,sap.ui.generic.app,sap.ui.table,sap.ushell,sap.ui.layout,sap.tnt,sap.viz"
         data-sap-ui-async="true"
         data-sap-ui-preload="async"
@@ -69,6 +69,13 @@
         data-sap-ui-frameOptions="allow">
     </script>
     <script id="locate-reuse-libs" src="./locate-reuse-libs.js" data-sap-ui-manifest-uri="../manifest.json">
+    </script>
+    <script>
+        sap.ui.getCore().attachInit(function () {
+            sap.ui.require(["vicstartintegration/test/flpSandbox"], function (flpSandbox) {
+                flpSandbox.init();
+            });
+        });
     </script>
 </head>
 

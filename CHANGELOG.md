@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.0] - 2026-01-13 (Stable)
+Type: Stable release
+
+Summary:
+- Removed "Export to Excel" from the chart view and added "Download chart as image" (PNG with white background; SVG fallback). Table view export remains unchanged.
+- Added full-screen chart dialog with toolbar icons aligned to the right: Zoom In, Zoom Out, Reset, Legend toggle, Download, Exit.
+- Implemented visual zoom/pan via SVG transform with drag-to-pan when zoom > 1; Reset returns to origin.
+- Set chart title to "VIC Trend Chart" across chart types (pie, donut, column, bar, line).
+- Fixed FLP sandbox bootstrap by requiring and initializing vicstartintegration/test/flpSandbox; ensured /resources and /test-resources resolve via local proxy.
+- Strengthened table Excel export to use public binding APIs with original model fallback and user confirmation dialog.
+
+Technical changes:
+- webapp/controller/View1.controller.js:
+  - New: onDownloadChartImage, onOpenChartFullScreen (customHeader contentRight), onZoomIn/Out, onResetZoom, onToggleLegend, _applyZoomAndPan, _attachPanHandlers.
+  - Chart title applied in _applyChartConfig; export logic hardened to use public APIs and fallback sources.
+- webapp/test/flpSandbox.html:
+  - Switched script src to absolute /resources and /test-resources.
+  - Added sap.ui.require to load vicstartintegration/test/flpSandbox and call init().
+- webapp/test/flpSandbox.js:
+  - Provides sandbox bootstrap with tiles/inbounds for #vicstartintegration-display.
+- ui5-local.yaml:
+  - Added UI5 proxy entries for /resources and /test-resources; kept backend proxy /VIC_UI_DEV.
+- webapp/manifest.json:
+  - Bumped sap.app.applicationVersion.version to 4.0.0.
+- package:
+  - Version is 4.0.0; start-local launches FLP sandbox on local tooling.
+
+Validation notes:
+- FLP sandbox renders shell and navigates to #vicstartintegration-display; chart toolbar functions in both main and full-screen.
+- Chart download produces PNG; falls back to SVG on canvas failure. Legend toggle affects both charts.
+- Zoom drag active only when zoom > 1; Reset returns to 1x and clears pan.
+- Table export remains available in table view using sap.ui.export.Spreadsheet.
+
+Breaking changes:
+- None (UI-only).
+
 ## [3.1.1] - 2026-01-11 (Patch)
 Type: Patch release
 
